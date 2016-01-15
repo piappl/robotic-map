@@ -26,8 +26,8 @@ void spamBeacon(ros::NodeHandle &handle)
     {
         rosmapinterface::RobotInformation beacon;
         beacon.robot_id = robotID;
-        beacon.robot_name = "scout";
-        beacon.robot_type = "fake";
+        beacon.robot_name = "fake";
+        beacon.robot_type = "robot";
         beacon.description = "not a real robot";
         beacon.x = global ? globalFakeLat : localFakeX;
         beacon.y = global ? globalFakeLon : localFakeY;

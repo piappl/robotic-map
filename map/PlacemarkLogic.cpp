@@ -241,7 +241,7 @@ void PlacemarkLogic::updatePlacemarkIcon(PlacemarkPtr placemark)
 
     MapObjectPtr object = mGeoManager->getMapObjectForPlacemark(placemark);
     updatePlacemarkIcon(placemark, object);
-    qDebug("PlacemarkLogic - updatePlacemarkIcon");
+    //qDebug("PlacemarkLogic - updatePlacemarkIcon");
     updateMarblePlacemark(placemark);
 
     QString nonSimplifiedGuiIcon = mIconProvider.getIconPath(object);
@@ -264,7 +264,7 @@ void PlacemarkLogic::updatePlacemarkIcon(PlacemarkPtr placemark, QString newIcon
     style->iconStyle().setIcon(newIcon);
     style->labelStyle().setAlignment(getAlignment());
 
-    qDebug("Style path icon: %s", qPrintable(placemark->style()->iconStyle().iconPath()));
+    //qDebug("Style path icon: %s", qPrintable(placemark->style()->iconStyle().iconPath()));
 }
 
 void PlacemarkLogic::updatePlacemarkPosition(PlacemarkPtr placemark, MapObjectPtr newInfo)

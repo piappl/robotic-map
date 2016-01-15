@@ -49,7 +49,7 @@ void GuiController::updatePlacemarkGuiInfo(GeoObjectID placemarkID,
         MapRobotObjectConstPtr robot = placemarkObject.staticCast<const MapRobotObject>();
         if (robot->visible())
         {
-            qDebug("Icon path %s", qPrintable(iconPath));
+            //qDebug("Icon path %s", qPrintable(iconPath));
             iconPath.prepend(iconPath.startsWith(':') ? "qrc" : "file:/");
             emit robotUpdate(placemarkID.intId(),
                              robot->robotID(),

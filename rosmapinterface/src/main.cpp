@@ -25,6 +25,8 @@
 
 //TODO - this is prototype code, no structure yet
 
+using namespace MapAbstraction;
+
 namespace
 {
     MapAbstraction::MapObject::LocalizationType localization(int type)

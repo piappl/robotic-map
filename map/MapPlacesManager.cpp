@@ -163,7 +163,7 @@ void MapPlacesManager::finalizeMapEdit(bool accept)
 
         if (path.size() > 0)
         {
-            qDebug("emit path - waypoints are in robot frame of reference coords");
+            qDebug("path - waypoints are in robot frame of reference coords");
             emit mapPathCreated(activeRobot->robotID(), path);
         }
     }

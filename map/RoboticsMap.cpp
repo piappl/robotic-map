@@ -536,7 +536,7 @@ void RoboticsMap::updateLaserPointsCloud(int robotID, LaserScanPoints points)
     MapRobotObjectPtr localRobot = mGeoObjectsManager->getConnectedRobot();
     if (mLocalMapLayer->visible() && localRobot && (robotID == localRobot->robotID()))
     {
-        qDebug("Received laser cloud");
+        //qDebug("Received laser cloud");
         mLaserCloudLayer->setVisible(mLocalMapLayer->visible());
         mLaserCloudLayer->updateContent(points, localRobot);
         update();

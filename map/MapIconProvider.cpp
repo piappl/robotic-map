@@ -33,11 +33,9 @@ namespace
 
 QString MapIconProvider::getRobotIconPath(MapRobotObjectConstPtr robot, bool isSimplified)
 {
-    qDebug("getRobotIconPath1");
     if (isSimplified || robot->state() == RobotStateDisappeared)
     {   //Use generic icon
         MapIcons::DefaultMapIcon type;
-         qDebug("getRobotIconPath12345");
         if (robot->state() == RobotStateDisappeared)
         {
             type = MapIcons::NoIcon;
@@ -53,7 +51,6 @@ QString MapIconProvider::getRobotIconPath(MapRobotObjectConstPtr robot, bool isS
     }
 
     //Use specific icon if available
-    qDebug("getRobotIconPath2");
     QString specificIconPath = mRobotConfigurations.getIconPath(robot->type());
     if (!specificIconPath.isEmpty())
     {
@@ -66,7 +63,6 @@ QString MapIconProvider::getRobotIconPath(MapRobotObjectConstPtr robot, bool isS
 
 QString MapIconProvider::getIconPath(MapObjectConstPtr object, bool isSimplified, bool isSelected)
 {
-    qDebug("Get icon path");
     if (object->category() == PlacemarkRobot)
     {
         MapRobotObjectConstPtr robot = object.staticCast<const MapRobotObject>();
