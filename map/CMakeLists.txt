@@ -9,7 +9,7 @@ find_package(Marble REQUIRED)
 SET(CMAKE_COLOR_MAKEFILE ON)
 set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--no-undefined")
 set(CMAKE_AUTOMOC TRUE)
-message(BLABLA ${MARBLE_LIBRARIES} ${MARBLE_PATH})
+message(Found marble ${MARBLE_LIBRARIES} ${MARBLE_PATH})
 
 include_directories(
 	${CMAKE_CURRENT_SOURCE_DIR}

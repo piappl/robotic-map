@@ -46,5 +46,5 @@ QString MapIcons::defaultIconPath(DefaultMapIcon icon)
 
 QString MapIcons::defaultRobotIconPath()
 {
-    return prefix + "gryf64" + extension;
+    return prefix + "defaultRobot" + extension;
 }
