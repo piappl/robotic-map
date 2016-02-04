@@ -27,8 +27,11 @@ add_executable(rosmapinterface
             ${Resources})
 target_link_libraries(rosmapinterface ${catkin_LIBRARIES} Qt5::Widgets Qt5::Quick Qt5::Core mapwidget)
 add_dependencies(rosmapinterface ${catkin_EXPORTED_TARGETS})
+add_dependencies(rosmapinterface rosmapinterface_generate_messages_cpp)
 
 #fakeRobot
 add_executable(fakeRobot src/fakeRobot.cpp)
 target_link_libraries(fakeRobot Qt5::Core ${catkin_LIBRARIES})
+add_dependencies(fakeRobot rosmapinterface_generate_messages_cpp)
+
 

@@ -12,11 +12,11 @@ namespace
 
 void spamBeacon(ros::NodeHandle &handle)
 {
-    const bool global = true; //change to false to have robot placed on local map
-    const float globalFakeLat = 0.910953467; //radians
-    const float globalFakeLon = 0.365144225;
-    const float localFakeX = 10.5; //meters
-    const float localFakeY = 5;
+    const bool global = false; //change to false to have robot placed on local map
+    const float globalFakeLat = 21; //degrees
+    const float globalFakeLon = 52;
+    const float localFakeX = 0; //meters
+    const float localFakeY = 0;
     const float orientation = 0;
 
     ros::Publisher pub = handle.advertise<rosmapinterface::RobotInformation>("/robot_introduction", 5);
@@ -32,8 +32,8 @@ void spamBeacon(ros::NodeHandle &handle)
         beacon.x = global ? globalFakeLat : localFakeX;
         beacon.y = global ? globalFakeLon : localFakeY;
         beacon.theta = orientation;
-        beacon.localization_type = global ? (uint8_t)rosmapinterface::RobotInformation::TYPE_LOCAL_RELATIVE
-                                          : (uint8_t)rosmapinterface::RobotInformation::TYPE_GLOBAL;
+        beacon.localization_type = global ? (uint8_t)rosmapinterface::RobotInformation::TYPE_GLOBAL
+                                          : (uint8_t)rosmapinterface::RobotInformation::TYPE_LOCAL_ABSOLUTE;
 
         pub.publish(beacon);
         sleep(1); //normal robot may want to spam beacon more often (like 2/sec)
