@@ -349,6 +349,31 @@ void RoboticsMap::updatePlacemark(GeoObjectID id, MapRobotObjectPtr robotObjectD
         return;  //TODO - alternatively, we might ditch only position and orientation components
     }
 
+    foreach (PlacemarkPtr place, mGeoObjectsManager->placemarks())
+    {   //TODO - this is temporary and will be replaced (function: find operator placement if available)
+        MapObjectPtr mapObject = mGeoObjectsManager->getMapObjectForPlacemark(place);
+        if (PlacemarkPlace == mapObject->category())
+        {   //There is an operator placed, find relative robot location. Robot is already in global coords;
+            GeoDataCoordinates robotCoords = MapLibraryHelpers::transformCoords(robotObjectData->coords());
+            GeoDataCoordinates placeCoords = MapLibraryHelpers::transformCoords(mapObject->coords());
+
+            qreal metersInRadianOfLongitude = model()->planetRadius();
+            qreal metersInRadianOfLatitude = cos(placeCoords.latitude()) * model()->planetRadius();
+
+            qreal y = (placeCoords.latitude() - robotCoords.latitude()) * metersInRadianOfLatitude;
+            qreal x = (placeCoords.longitude() - robotCoords.longitude()) * metersInRadianOfLongitude;
+
+            GeoCoords metersXYCoords(x, y);
+
+            if (robotObjectData->connected())
+            {   //TODO - no need to send only for connected. Send for all.
+                qDebug("Position Available %lf %lf", x, y);
+                sender()->robotPositionRelativeToOperator(robotObjectData->robotID(), metersXYCoords);
+            }
+            break;
+        }
+    }
+
     mPlacemarkLogic->addOrUpdatePlacemark(id, robotObjectData);
 }
 

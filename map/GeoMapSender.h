@@ -18,6 +18,10 @@ namespace MapAbstraction
         //Coords here are used to store local coordinates
         void robotPositioned(int targetRobotID, MapAbstraction::GeoCoords position, MapAbstraction::Orientation orientation);
 
+        //This signal is sent if operator position is available (i.e. it has been manually localized).
+        //Position is in meters of distance in x axis and y axis (compass-enabled receivers use x=east and y=north).
+        void robotPositionRelativeToOperator(int targetRobotID, MapAbstraction::GeoCoords position);
+
         //Request connection with robot (for connection-oriented protocols,
         //for ROS robots, the handler should always respond with success (see IMapSignalReceiver)
         //connect = false is request for a disconnect.
