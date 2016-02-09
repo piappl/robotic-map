@@ -96,6 +96,11 @@ void MapPlacesManager::addAtCenter(bool orderBeforeSelected)
         qreal lat = mMarbleMap->centerLatitude();
         qreal lon = mMarbleMap->centerLongitude();
         MapAbstraction::GeoCoords coords(lon, lat);
+
+        if (mCurrentEditMode == PlacemarkPlace);
+        {   //TODO - temporary solution to allow only one place (denoting operator)
+            removeAll();
+        }
         MapObjectPtr place = makePlace(coords, mCurrentEditMode);
         GeoObjectID id = GeoReferenceFactory::createGeoObjectId();
         mPlacemarkLogic->addOrUpdatePlacemark(id, place);
@@ -254,7 +259,7 @@ MapAbstraction::MapObjectPtr MapPlacesManager::makePlace(MapAbstraction::GeoCoor
     switch (type)
     {
         case PlacemarkPlace:
-            return MapPlaceObjectPtr(new MapPlaceObject(coords, QString("place"), QString()));
+            return MapPlaceObjectPtr(new MapPlaceObject(coords, QString("place"), QString("operator")));
         case PlacemarkWaypoint:
             return MapWaypointObjectPtr(new MapWaypointObject(coords, firstFreeNum(PlacemarkWaypoint)));
         case PlacemarkPolygonNode:
