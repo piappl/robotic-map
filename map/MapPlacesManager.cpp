@@ -97,7 +97,7 @@ void MapPlacesManager::addAtCenter(bool orderBeforeSelected)
         qreal lon = mMarbleMap->centerLongitude();
         MapAbstraction::GeoCoords coords(lon, lat);
 
-        if (mCurrentEditMode == PlacemarkPlace);
+        if (mCurrentEditMode == PlacemarkPlace)
         {   //TODO - temporary solution to allow only one place (denoting operator)
             removeAll();
         }
