@@ -25,6 +25,7 @@ namespace MapAbstraction
     class GeoObjectsManager
     {
     public:
+        GeoObjectsManager();
         bool hasPlacemark(const GeoObjectID &id) const;
         PlacemarkPtr getPlacemark(const GeoObjectID &id) const;
         void removePlacemark(const GeoObjectID &id);

@@ -355,6 +355,9 @@ void MapPlacesManager::selectPlacemark(int placemarkID)
 
 void MapPlacesManager::selectPlacemark(PlacemarkPtr place)
 {
+    if (!place)
+        return;
+
     removeSelection();
 
     if (mCurrentEditMode != PlacemarkWaypoint && mCurrentEditMode != PlacemarkPolygonNode)

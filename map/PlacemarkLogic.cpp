@@ -240,6 +240,9 @@ void PlacemarkLogic::updatePlacemarkIcon(PlacemarkPtr placemark)
         return;
 
     MapObjectPtr object = mGeoManager->getMapObjectForPlacemark(placemark);
+    if (!object)
+        return;
+
     updatePlacemarkIcon(placemark, object);
     //qDebug("PlacemarkLogic - updatePlacemarkIcon");
     updateMarblePlacemark(placemark);

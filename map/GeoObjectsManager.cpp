@@ -6,6 +6,11 @@ namespace MapAbstraction
 {
     const int NoConnectedRobotID = -1;
 
+    GeoObjectsManager::GeoObjectsManager() : mConnectedRobotID(NoConnectedRobotID), mSelectedPlacemark(0)
+    {
+
+    }
+
     bool GeoObjectsManager::hasPlacemark(const GeoObjectID &id) const
     {
         return mPlacemarkMap.contains(id);
