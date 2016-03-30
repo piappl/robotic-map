@@ -24,7 +24,6 @@ PlacemarkListWindow
             function buttonClicked()
             {
                 var itemIndex = modelItemIndex(placemarkID)
-                mapItem.onRobotConnectToggle(robotID);
                 selectItem(itemIndex, true)
             }
 
@@ -76,7 +75,11 @@ PlacemarkListWindow
                     }
                 }
 
-                onClicked: { buttonClicked() }
+                onClicked:
+                {
+                    mapItem.onRobotConnectToggle(robotID)
+                    buttonClicked()
+                }
                 onPressedShort:
                 {
                     var toggle = !toggled
