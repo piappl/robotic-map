@@ -43,7 +43,6 @@ Your customized content should be placed in /share/maps/ directory:
 
 <b> Roadmap </b>
 
-- User manual.
 - Developer manual.
 - Marble fork (& cooperation).
 - Fix positioning approximation closer to poles.
