@@ -8,6 +8,10 @@ Robotic map interface, based on Marble. Author: Adam Dąbrowski, adabrowski@piap
 
 The map project creates the library. You can use it with your application through Qt slots/signals interface. Another option is to build and run rosmapinterface - then the map functions as a ROS node.
 
+<b> User Manual </b>
+
+You can find User Manual in the docs directory.
+
 <b>Functionalities</b>
 
 - Layered virtual globe interface (thanks to Marble).
