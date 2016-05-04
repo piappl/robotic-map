@@ -2,17 +2,17 @@
 #define CONFIGURATIONLOADER_H
 
 #include <QString>
-#include "RobotIconConfiguration.h"
+#include "IconConfiguration.h"
 
 class ConfigurationLoader
 {
 public:
     ConfigurationLoader();
     void loadConfigurations();
-    QString getIconPath(QString robotNameID) const;
+    QString getIconPath(QString nameID) const;
 
 private:
-    RobotIconConfigurationMap mRobotIcons;
+    IconConfigurationMap mIcons;
 };
 
 #endif // CONFIGURATIONLOADER_H

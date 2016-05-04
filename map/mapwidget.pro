@@ -118,7 +118,7 @@ HEADERS += $${INSTALL_HEADERS} \
     MapKeyboardInputHandler.h \
     RoboticsMap.h \
     ConfigurationLoader.h \
-    RobotIconConfiguration.h \
+    IconConfiguration.h \
     MapIconPainter.h \
     MapIcons.h
 
