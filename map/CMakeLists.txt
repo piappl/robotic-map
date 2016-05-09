@@ -52,14 +52,15 @@ set(SOURCES
     MapOrderedObject.cpp
     GeoObjectID.cpp
     GeoMapSender.cpp
-    GeoLocalMapReceiver.cpp
+    MapReceiver.cpp
     LaserCloudLayer.cpp
     RobotEditor.cpp
     RobotManualPlacementLayer.cpp
     ManualPositioningLogic.cpp
     MapIconPainter.cpp
     MapIcons.cpp
-    ConfigurationLoader.cpp)
+    ConfigurationLoader.cpp
+    DynamicObjectsLayer.cpp)
 
 set(INSTALL_HEADERS
     IGeoMapFwd.h
@@ -77,9 +78,10 @@ set(INSTALL_HEADERS
     PlacemarkType.h
     GeoCoords.h
     GeoMapSender.h
-    GeoLocalMapReceiver.h
+    MapReceiver.h
     LaserScanPoint.h
-    Orientation.h)
+    Orientation.h
+    DynamicObject.h)
 
 qt5_add_resources(RESOURCES resources.qrc)
 add_library(mapwidget SHARED ${SOURCES} ${RESOURCES})

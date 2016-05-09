@@ -15,10 +15,10 @@ namespace MapAbstraction
     public:
         MapWrap(QQuickItem *viewMap, int consoleID);
         GeoMapSenderPtr sender() const;
-        GeoLocalMapReceiverPtr localMapReceiver() const;
+        MapReceiverPtr mapReceiver() const;
 
     public slots:
-        void updateRobot(MapRobotObjectPtr robotInfo);
+        void updateRobot(MapAbstraction::MapRobotObjectPtr robotInfo);
         void robotConnected(int robotID, bool connected);
         void robotAvailabilityChanged(int robotId, bool available);
 

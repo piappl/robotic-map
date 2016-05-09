@@ -22,6 +22,9 @@ namespace Marble
 
     class LaserCloudLayer;
     typedef QSharedPointer<LaserCloudLayer> LaserCloudLayerPtr;
+
+    class DynamicObjectsLayer;
+    typedef QSharedPointer<DynamicObjectsLayer> DynamicObjectsLayerPtr;
 }
 
 

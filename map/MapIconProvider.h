@@ -5,12 +5,14 @@
 #include "MapObjectsFwd.h"
 #include "ConfigurationLoader.h"
 #include "MapIconPainter.h"
+#include "DynamicObject.h"
 
 namespace MapAbstraction
 {
     class MapIconProvider
     {
     public:
+        QImage getDynamicObjectIcon(DynamicObjectType type);
         QImage getIcon(MapObjectConstPtr object, bool isSimplified = false, bool isSelected = false);
         QString getIconPath(MapObjectConstPtr object, bool isSimplified = false, bool isSelected = false);
     private:

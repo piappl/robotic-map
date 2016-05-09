@@ -35,7 +35,7 @@ SOURCES += \
     GeoObjectID.cpp \
     GeoMapSender.cpp \
     LocalMapLayer.cpp \
-    GeoLocalMapReceiver.cpp \
+    MapReceiver.cpp \
     LocalMapLogic.cpp \
     LaserCloudLayer.cpp \
     ManualPositioningLogic.cpp \
@@ -49,7 +49,8 @@ SOURCES += \
     RoboticsMap.cpp \
     ConfigurationLoader.cpp \
     MapIconPainter.cpp \
-    MapIcons.cpp
+    MapIcons.cpp \
+    DynamicObjectsLayer.cpp
 
 INSTALL_ROOT = /usr/local
 INCLUDEPATH += $${INSTALL_ROOT}/include/marble
@@ -72,9 +73,10 @@ INSTALL_HEADERS += \
     PlacemarkType.h \
     GeoCoords.h \
     GeoMapSender.h \
-    GeoLocalMapReceiver.h \
+    MapReceiver.h \
     LaserScanPoint.h \
-    Orientation.h
+    Orientation.h \
+    DynamicObject.h
 
 LIBS += -lmarbledeclarative \
         -lmarblewidget-qt5
@@ -118,9 +120,11 @@ HEADERS += $${INSTALL_HEADERS} \
     MapKeyboardInputHandler.h \
     RoboticsMap.h \
     ConfigurationLoader.h \
-    IconConfiguration.h \
     MapIconPainter.h \
-    MapIcons.h
+    MapIcons.h \
+    DynamicObjectsLayer.h \
+    IconConfiguration.h \
+    DynamicObject.h
 
 headers.files = $$INSTALL_HEADERS
 headers.path = $${INSTALL_ROOT}/include/map

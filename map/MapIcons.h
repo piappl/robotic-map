@@ -18,7 +18,8 @@ class MapIcons
             PolygonNodeIcon,
             SelectedPolygonNodeIcon,
             TriangleIcon,
-            PointIcon
+            PointIcon,
+            PedestrianIcon
         };
 
         static QString iconName(DefaultMapIcon type);

@@ -7,21 +7,21 @@
 #include <QQuickItem>
 #include <QQmlEngine>
 #include <QFileInfo>
-#include <QtConcurrent/QtConcurrent>
 #include <QApplication>
+#include <QTimer>
 #include <QMap>
 
 #include <map/MapWrap.h>
 #include <map/MapRobotObject.h>
 #include <map/MapWaypointObject.h>
 #include <map/GeoMapSender.h>
+#include <map/DynamicObject.h>
 
 //#include <std_msgs/String.h>
 //#include <geometry_msgs/Twist.h>
 #include <ros/ros.h>
-
-#include "rosmapinterface/RobotInformation.h"
 #include "rosmapinterface/WaypointInformation.h"
+#include "robotlistener.h"
 
 //TODO - this is prototype code, no structure yet
 
@@ -29,97 +29,8 @@ using namespace MapAbstraction;
 
 namespace
 {
-    MapAbstraction::MapObject::LocalizationType localization(int type)
-    {
-        switch (type)
-        {
-        case rosmapinterface::RobotInformation::TYPE_GLOBAL: return MapAbstraction::MapObject::Global;
-        case rosmapinterface::RobotInformation::TYPE_LOCAL_ABSOLUTE: return MapAbstraction::MapObject::LocalAbsolute;
-        case rosmapinterface::RobotInformation::TYPE_LOCAL_RELATIVE: return MapAbstraction::MapObject::LocalRelative;
-        case rosmapinterface::RobotInformation::TYPE_NO_POSITION: return MapAbstraction::MapObject::None;
-        default: return MapAbstraction::MapObject::None;
-        }
-    }
-
-    MapAbstraction::MapObject::LocalizationMode mode(MapAbstraction::MapObject::LocalizationType type)
-    {
-        return type == MapAbstraction::MapObject::Global ? MapAbstraction::MapObject::Automatic
-                                                         : MapAbstraction::MapObject::Assisted;
-    }
+    const int consoleID = 1331;
 }
-
-//This interface is used to be noted of new robots in communication zone, which are broadcasting.
-//Right now callback only used to advertise waypoint topic by the waypoint sender.
-class RobotIDListener : public QObject
-{
-    Q_OBJECT
-public:
-    virtual ~RobotIDListener() {}
-public slots:
-    void robotDetected(int id) { onRobotDetected(id); }
-private:
-    virtual void onRobotDetected(int id) = 0;
-};
-
-class RosBeaconListener : public QObject
-{
-    Q_OBJECT
-signals:
-    void robotUpdate(MapRobotObjectPtr newState);
-    void receivingRobotID(int id);
-
-public:
-    static void start(MapWrapPtr mapWrap, QSharedPointer<ros::NodeHandle> handle, RobotIDListener *l)
-    {
-        QtConcurrent::run(&RosBeaconListener::startNewThread, mapWrap, handle, l);
-    }
-
-private:
-    static void startNewThread(MapWrapPtr mapWrap, QSharedPointer<ros::NodeHandle> handle, RobotIDListener *l)
-    {
-        RosBeaconListener listener;
-        listener.runListener(mapWrap, handle, l);
-    }
-
-    void beaconCallback(const rosmapinterface::RobotInformation::ConstPtr& msg)
-    {
-        bool hasOrientation = true;
-        double orientation = msg->theta;
-        QString name(msg->robot_type.data());
-        QString type(msg->robot_name.data());
-        QString description(msg->description.data());
-        RobotState state = RobotStateNormal;
-        MapAbstraction::MapObject::LocalizationType lt = localization(msg->localization_type);
-        MapAbstraction::MapObject::LocalizationMode lm = mode(lt);
-        MapAbstraction::GeoCoords coords(msg->x, msg->y);
-        int robotID = msg->robot_id;
-        int consoleID = 0;
-        MapAbstraction::MapRobotObjectPtr obj(
-                    new MapAbstraction::MapRobotObject(
-                        coords, orientation, state,
-                        type, name, description,
-                        robotID, consoleID,
-                        lt, lm));
-        obj->setOrientationAvailable(hasOrientation);
-        emit robotUpdate(obj);
-        emit receivingRobotID(robotID);
-    }
-
-    void runListener(MapWrapPtr mapWrap, QSharedPointer<ros::NodeHandle> handle, RobotIDListener *l)
-    {
-        connect(this, SIGNAL(receivingRobotID(int)), l, SLOT(robotDetected(int)));
-        qDebug("RobotInformation listener running");
-        qRegisterMetaType<MapRobotObjectPtr>("MapRobotObjectPtr");
-        connect(this, SIGNAL(robotUpdate(MapRobotObjectPtr)),
-                mapWrap.data(), SLOT(updateRobot(MapRobotObjectPtr)), Qt::QueuedConnection);
-
-        std::string subscriberTopic = "robot_introduction";
-        ros::Subscriber subs = handle->subscribe<rosmapinterface::RobotInformation>(
-                    subscriberTopic, 100, &RosBeaconListener::beaconCallback, this);
-
-        ros::spin();
-    }
-};
 
 class RosWaypointSender : public RobotIDListener
 {
@@ -216,7 +127,7 @@ public:
 
         setSource(QUrl("qrc:/wrap.qml"));
         QQuickItem *viewMapItem = rootObject();
-        mMapWrap.reset(new MapWrap(viewMapItem, 0));
+        mMapWrap.reset(new MapWrap(viewMapItem, consoleID));
         if(status()!=QQuickView::Ready)
             qDebug("can't initialise view");
 
@@ -230,7 +141,7 @@ public:
         show();
 
         mSender.reset(new RosWaypointSender(mMapWrap, mHandle));
-        RosBeaconListener::start(mMapWrap, mHandle, mSender.data());
+        RobotListener::start(mMapWrap, mHandle, mSender.data());
 
         QTimer *checker = new QTimer(this);
         connect(checker, SIGNAL(timeout()), this, SLOT(checkMaster()));
@@ -268,6 +179,10 @@ private:
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
+    qRegisterMetaType<MapAbstraction::MapRobotObjectPtr>("MapAbstraction::MapRobotObjectPtr");
+    qRegisterMetaType<MapAbstraction::LaserScanPoints>("MapAbstraction::LaserScanPoints");
+    qRegisterMetaType<MapAbstraction::DynamicObjects>("MapAbstraction::DynamicObjects");
+
     MapQuickItem node(argc, argv);
     node.start();
     return app.exec();

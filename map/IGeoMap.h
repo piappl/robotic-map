@@ -5,7 +5,7 @@
 #include "IGeoMapFwd.h"
 #include "IMapSignalReceiver.h"
 #include "GeoMapSender.h"
-#include "GeoLocalMapReceiver.h"
+#include "MapReceiver.h"
 
 namespace MapAbstraction
 {
@@ -13,7 +13,7 @@ namespace MapAbstraction
     {
     public:
         virtual ~IGeoMap() {}
-        virtual GeoLocalMapReceiverPtr localMapReceiver() const = 0;
+        virtual MapReceiverPtr mapReceiver() const = 0;
         virtual GeoMapSenderPtr sender() const = 0;
     };
 }

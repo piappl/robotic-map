@@ -20,8 +20,8 @@ namespace MapAbstraction
     class GeoMapSender;
     typedef QSharedPointer<GeoMapSender> GeoMapSenderPtr;
 
-    class GeoLocalMapReceiver;
-    typedef QSharedPointer<GeoLocalMapReceiver> GeoLocalMapReceiverPtr;
+    class MapReceiver;
+    typedef QSharedPointer<MapReceiver> MapReceiverPtr;
 
     class RegionData;
     typedef QSharedPointer<RegionData> RegionDataPtr;

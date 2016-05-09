@@ -20,7 +20,8 @@ QString MapIcons::iconName(DefaultMapIcon type)
         case PolygonNodeIcon: return "polygonNode";
         case SelectedPolygonNodeIcon: return "polygonNodeSelected";
         case TriangleIcon: return "triangle";
-        case NoIcon: return "noIcon";
+        case PedestrianIcon: return "pedestrian";
+        case NoIcon: return "noIcon"; 
         default: return "noIcon";
     }
 }

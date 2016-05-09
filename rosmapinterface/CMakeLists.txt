@@ -3,7 +3,7 @@ project(rosmapinterface)
 
 find_package(catkin REQUIRED COMPONENTS roscpp std_msgs message_generation)
 
-#set(CMAKE_PREFIX_PATH ~/Qt5.3.1/5.3/gcc_64/lib/cmake)
+set(CMAKE_PREFIX_PATH ~/Qt5.3.1/5.3/gcc_64/lib/cmake)
 find_package(Qt5Core REQUIRED)
 find_package(Qt5Quick REQUIRED)
 find_package(Qt5Widgets REQUIRED)
@@ -12,6 +12,14 @@ message(WARNING, "1. |${catkin_INCLUDE_DIRS}|${CATKIN_DEVEL_PREFIX}|${CMAKE_INST
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
+
+if (CMAKE_VERSION VERSION_LESS "3.1")
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        set (CMAKE_CXX_FLAGS "--std=gnu++11 ${CMAKE_CXX_FLAGS}")
+    endif ()
+else ()
+  set (CMAKE_CXX_STANDARD 11)
+endif ()
 
 add_message_files(FILES RobotInformation.msg WaypointInformation.msg)
 generate_messages(DEPENDENCIES std_msgs)
@@ -24,6 +32,9 @@ include_directories(
 QT5_ADD_RESOURCES(Resources src/res.qrc)
 add_executable(rosmapinterface
             src/main.cpp
+            src/robotlistener.cpp
+            src/lasersubscriber.cpp
+            src/peoplesubscriber.cpp
             ${Resources})
 target_link_libraries(rosmapinterface ${catkin_LIBRARIES} Qt5::Widgets Qt5::Quick Qt5::Core mapwidget)
 add_dependencies(rosmapinterface ${catkin_EXPORTED_TARGETS})

@@ -10,6 +10,7 @@
 #include "InternalTypesFwd.h"
 #include "IGeoMap.h"
 #include "LaserScanPoint.h"
+#include "DynamicObject.h"
 #include "GeoCoords.h"
 #include "Orientation.h"
 
@@ -34,11 +35,11 @@ class RoboticsMap : public Marble::MarbleQuickItem, public MapAbstraction::IGeoM
     // IGeoMap interface
     public:
         MapAbstraction::GeoMapSenderPtr sender() const;
-        MapAbstraction::GeoLocalMapReceiverPtr localMapReceiver() const;
+        MapAbstraction::MapReceiverPtr mapReceiver() const;
 
     // IMapSignalReceiver interface
     public slots:
-        void updatePlacemark(GeoObjectID id, MapAbstraction::MapRobotObjectPtr newObject);
+        void updatePlacemark(GeoObjectID id, MapAbstraction::MapObjectPtr newObject);
         void connectedToRobot(int robotID, bool connected);
 
     public slots:
@@ -70,6 +71,7 @@ class RoboticsMap : public Marble::MarbleQuickItem, public MapAbstraction::IGeoM
         void updateLocalMap(QString mapPng, qreal resolution, MapAbstraction::GeoCoords approxCenter,
                             MapAbstraction::Orientation rotation, QPointF origin);
         void updateLaserPointsCloud(int robotID, MapAbstraction::LaserScanPoints);
+        void updateDynamicObjects(int robotID, MapAbstraction::DynamicObjects);
 
     private:
         void processRobotConnectionStatus(MapAbstraction::MapRobotObjectPtr newObject);
@@ -87,19 +89,21 @@ class RoboticsMap : public Marble::MarbleQuickItem, public MapAbstraction::IGeoM
         PlacemarkLogicPtr mPlacemarkLogic;
         TrackingCameraPtr mTrackingCamera;
 
+        //TODO - move to layers component
         Marble::PathsLayerPtr mPathsLayer;
         Marble::RegionsLayerPtr mRegionsLayer;
         Marble::CrosshairLayerPtr mCrosshairLayer;
         Marble::LocalMapLayerPtr mLocalMapLayer;
         Marble::LaserCloudLayerPtr mLaserCloudLayer;
         Marble::RobotManualPlacementLayerPtr mRobotPlacementLayer;
+        Marble::DynamicObjectsLayerPtr mDynamicObjectsLayer;
 
         bool mPathsVisible;
         bool mScaling;
         TextureManagerPtr mTextureManager;
         MapPlacesManagerPtr mMapPlacesManager;
         MapAbstraction::GeoMapSenderPtr mSender;
-        MapAbstraction::GeoLocalMapReceiverPtr mLocalMapReceiver;
+        MapAbstraction::MapReceiverPtr mMapReceiver;
         MapAbstraction::LocalMapLoaderPtr mLocalMapLoader;
         ManualPositioningLogicPtr mManualPositioningLogic;
 };

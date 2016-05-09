@@ -68,6 +68,15 @@ QString MapIconProvider::getIconPath(MapObjectConstPtr object, bool isSimplified
         MapRobotObjectConstPtr robot = object.staticCast<const MapRobotObject>();
         return getRobotIconPath(robot, isSimplified);
     }
+    else if (object->category() == PlacemarkPlace)
+    {
+        QString specificIconPath = mRobotConfigurations.getIconPath(object->type());
+        if (!specificIconPath.isEmpty())
+        {
+            return specificIconPath;
+        }
+        return MapIcons::defaultIconPath(MapIcons::PointIcon);
+    }
     else
     {
         MapIcons::DefaultMapIcon type = getPlaceIconType(object, isSelected);
@@ -79,4 +88,18 @@ QImage MapIconProvider::getIcon(MapObjectConstPtr object, bool isSimplified, boo
 {
     QImage icon(getIconPath(object, isSimplified, isSelected));
     return mMapIconPainter.paintIcon(icon, object, isSimplified);
+}
+
+QImage MapIconProvider::getDynamicObjectIcon(DynamicObjectType type)
+{
+    switch (type)
+    {
+        case DynamicObjectPedestrian:
+            return QImage(MapIcons::defaultIconPath(MapIcons::PedestrianIcon));
+        case DynamicObjectUnknown:
+            return QImage(MapIcons::defaultIconPath(MapIcons::PointIcon));
+        default:
+            qWarning("Icon not found for a given dynamic object type, using default!");
+            return QImage(MapIcons::defaultIconPath(MapIcons::PointIcon));
+    }
 }

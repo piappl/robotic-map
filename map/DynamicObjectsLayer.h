@@ -1,22 +1,22 @@
-#ifndef LASERCLOUDLAYER_H
-#define LASERCLOUDLAYER_H
+#ifndef DYNAMICOBJECTSLAYER_H
+#define DYNAMICOBJECTSLAYER_H
 
+#include <QTimer>
 #include <marble/LayerInterface.h>
 #include "InternalTypesFwd.h"
 #include "MapAbstractionFwd.h"
-#include "LaserScanPoint.h"
+#include "DynamicObject.h"
 #include "MapLayersFwd.h"
-
-class RoboticsMap;
+#include "MapIconProvider.h"
 
 namespace Marble
 {
-    class LaserCloudLayer : public QObject, public LayerInterface
+    class DynamicObjectsLayer : public QObject, public LayerInterface
     {
     Q_OBJECT
     public:
-        LaserCloudLayer(LocalMapLayerPtr map);
-        void updateContent(MapAbstraction::LaserScanPoints points, MapAbstraction::MapRobotObjectConstPtr robot);
+        DynamicObjectsLayer(LocalMapLayerPtr map);
+        void updateContent(MapAbstraction::DynamicObjects objects, MapAbstraction::MapRobotObjectConstPtr robot);
 
         QStringList renderPosition() const;
         qreal zValue() const;
@@ -24,16 +24,20 @@ namespace Marble
         void setVisible(bool visible);
         bool visible() const;
         bool hasContent() const;
-        void onConnectedToRobot(int robotID, bool connected);
+
+    private slots:
+        void cleanDynamicObjects();
 
     private:
         LocalMapLayerPtr mLocalMap;
-        MapAbstraction::LaserScanPoints mLaserPoints;
+        MapAbstraction::DynamicObjects mDynamicObjects;
         MapAbstraction::MapRobotObjectConstPtr mRobot;
 
         bool mVisible;
         bool mHasContent;
+        QTimer mCleanupTimer;
+        MapAbstraction::MapIconProvider mIconProvider;
     };
 }
 
-#endif // LASERCLOUDLAYER_H
+#endif // DYNAMICOBJECTSLAYER_H

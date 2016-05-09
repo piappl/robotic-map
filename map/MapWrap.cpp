@@ -22,9 +22,9 @@ GeoMapSenderPtr MapWrap::sender() const
     return mMap->sender();
 }
 
-GeoLocalMapReceiverPtr MapWrap::localMapReceiver() const
+MapReceiverPtr MapWrap::mapReceiver() const
 {
-    return mMap->localMapReceiver();
+    return mMap->mapReceiver();
 }
 
 void MapWrap::robotConnected(int robotID, bool connected)

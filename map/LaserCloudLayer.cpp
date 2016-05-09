@@ -57,27 +57,22 @@ namespace Marble
         pen.setWidth(3);
         painter->setPen(pen);
 
-        const int optimizeToOrder = 500;
-        int every = mLaserPoints.size() / optimizeToOrder;
-        if (every < 1)
-            every = 1;
-        int counter = 1;
-
         foreach(LaserScanPoint p, mLaserPoints)
         {   //Should be optimized (make a png);
-            if (counter >= every)
-            {
-                GeoDataCoordinates marbleCoords = mLocalMap->robotToGlobal(p, mRobot);
-                painter->drawPoint(marbleCoords);
-                counter = 1;
-            }
-            else
-            {
-                counter++;
-            }
+
+            GeoDataCoordinates marbleCoords = mLocalMap->robotToGlobal(p, mRobot);
+            painter->drawPoint(marbleCoords);
         }
 
         painter->restore();
         return true;
+    }
+
+    void LaserCloudLayer::onConnectedToRobot(int robotID, bool connected)
+    {
+        if (!mRobot || mRobot->robotID() != robotID || !connected)
+        {
+            mHasContent = false;
+        }
     }
 }

@@ -18,6 +18,7 @@
 #include "LocalMapLayer.h"
 #include "LaserCloudLayer.h"
 #include "RobotManualPlacementLayer.h"
+#include "DynamicObjectsLayer.h"
 
 #include "RoboticsMap.h"
 #include "GuiController.h"
@@ -115,12 +116,16 @@ void RoboticsMap::connectSignals()
     connect(mPlacemarkLogic.data(), SIGNAL(activeRobotPositionChanged(GeoObjectID)),
             mMapPlacesManager.data(), SLOT(activeRobotPositionChanged(GeoObjectID)));
 
-    connect(mLocalMapReceiver.data(), SIGNAL(localMapChanged(QString, qreal, MapAbstraction::GeoCoords, MapAbstraction::Orientation, QPointF)),
+    connect(mMapReceiver.data(), SIGNAL(localMapChanged(QString, qreal, MapAbstraction::GeoCoords, MapAbstraction::Orientation, QPointF)),
             this, SLOT(updateLocalMap(QString, qreal, MapAbstraction::GeoCoords, MapAbstraction::Orientation, QPointF)));
 
     qRegisterMetaType<LaserScanPoints>("LaserScanPoints");
-    connect(mLocalMapReceiver.data(), SIGNAL(laserPointsCloudChanged(int, MapAbstraction::LaserScanPoints)),
+    connect(mMapReceiver.data(), SIGNAL(laserPointsCloudChanged(int, MapAbstraction::LaserScanPoints)),
             this, SLOT(updateLaserPointsCloud(int, MapAbstraction::LaserScanPoints)));
+
+    qRegisterMetaType<DynamicObjects>("DynamicObjects");
+    connect(mMapReceiver.data(), SIGNAL(dynamicObjectsChanged(int, MapAbstraction::DynamicObjects)),
+            this, SLOT(updateDynamicObjects(int, MapAbstraction::DynamicObjects)));
 
     connect(mManualPositioningLogic.data(), SIGNAL(robotPlacementComplete(GeoObjectID,MapAbstraction::MapRobotObjectPtr)),
             this, SLOT(manualOverrideOfRobotLocation(GeoObjectID,MapAbstraction::MapRobotObjectPtr)));
@@ -228,12 +233,13 @@ RoboticsMap::RoboticsMap(QQuickItem *parent) : MarbleQuickItem(parent),
     mLocalMapLayer(new LocalMapLayer(model(), map())),
     mLaserCloudLayer(new LaserCloudLayer(mLocalMapLayer)),
     mRobotPlacementLayer(new RobotManualPlacementLayer(map())),
+    mDynamicObjectsLayer(new DynamicObjectsLayer(mLocalMapLayer)),
     mPathsVisible(false),
     mScaling(true),
     mTextureManager(new TextureManager(map())),
     mMapPlacesManager(new MapPlacesManager(mPlacemarkLogic, mGeoObjectsManager, mLocalMapLayer, map())),
     mSender(new GeoMapSender()),
-    mLocalMapReceiver(new GeoLocalMapReceiver()),
+    mMapReceiver(new MapReceiver()),
     mLocalMapLoader(new LocalMapLoader(this)),
     mManualPositioningLogic(new ManualPositioningLogic(mPlacemarkLogic, mGeoObjectsManager, map(), mRobotPlacementLayer))
 {  
@@ -243,6 +249,7 @@ RoboticsMap::RoboticsMap(QQuickItem *parent) : MarbleQuickItem(parent),
     map()->addLayer(mLocalMapLayer.data());
     map()->addLayer(mLaserCloudLayer.data());
     map()->addLayer(mRobotPlacementLayer.data());
+    map()->addLayer(mDynamicObjectsLayer.data());
     mPathsLayer->setRobotPathsVisibility(mPathsVisible);
 
     installEventFilter(mInputHandler.data()); //add our specific filter on top
@@ -254,9 +261,9 @@ GeoMapSenderPtr RoboticsMap::sender() const
     return mSender;
 }
 
-GeoLocalMapReceiverPtr RoboticsMap::localMapReceiver() const
+MapReceiverPtr RoboticsMap::mapReceiver() const
 {
-    return mLocalMapReceiver;
+    return mMapReceiver;
 }
 
 void RoboticsMap::processRobotConnectionStatus(MapRobotObjectPtr newObject)
@@ -332,49 +339,28 @@ bool RoboticsMap::processRobotLocalizationStatus(GeoObjectID id, MapRobotObjectP
     return true;
 }
 
-void RoboticsMap::updatePlacemark(GeoObjectID id, MapRobotObjectPtr robotObjectData)
+void RoboticsMap::updatePlacemark(GeoObjectID id, MapObjectPtr objectData)
 {
-    processRobotConnectionStatus(robotObjectData);
-    bool proceed = processRobotLocalizationStatus(id, robotObjectData);
-    if (!proceed)
+    if (PlacemarkRobot == objectData->category())
     {
-        return;
-    }
+        MapRobotObjectPtr robotObjectData = objectData.staticCast<MapRobotObject>();
+        processRobotConnectionStatus(robotObjectData);
+        bool proceed = processRobotLocalizationStatus(id, robotObjectData);
+        if (!proceed)
+        {
+            return;
+        }
 
-    if (mManualPositioningLogic->isInManualPlacementMode(id))
-    {   //The robot is being manualy positioned on the map so don't interfere
-        MapRobotObjectPtr manualOverride = mManualPositioningLogic->positionedRobot();
-        robotObjectData->setCoords(manualOverride->coords());
-        robotObjectData->setOrientation(manualOverride->orientation());
-        return;  //TODO - alternatively, we might ditch only position and orientation components
-    }
-
-    foreach (PlacemarkPtr place, mGeoObjectsManager->placemarks())
-    {   //TODO - this is temporary and will be replaced (function: find operator placement if available)
-        MapObjectPtr mapObject = mGeoObjectsManager->getMapObjectForPlacemark(place);
-        if (PlacemarkPlace == mapObject->category())
-        {   //There is an operator placed, find relative robot location. Robot is already in global coords;
-            GeoDataCoordinates robotCoords = MapLibraryHelpers::transformCoords(robotObjectData->coords());
-            GeoDataCoordinates placeCoords = MapLibraryHelpers::transformCoords(mapObject->coords());
-
-            qreal metersInRadianOfLongitude = model()->planetRadius();
-            qreal metersInRadianOfLatitude = cos(placeCoords.latitude()) * model()->planetRadius();
-
-            qreal y = (placeCoords.latitude() - robotCoords.latitude()) * metersInRadianOfLatitude;
-            qreal x = (placeCoords.longitude() - robotCoords.longitude()) * metersInRadianOfLongitude;
-
-            GeoCoords metersXYCoords(x, y);
-
-            if (robotObjectData->connected())
-            {   //TODO - no need to send only for connected. Send for all.
-                qDebug("Position Available %lf %lf", x, y);
-                sender()->robotPositionRelativeToOperator(robotObjectData->robotID(), metersXYCoords);
-            }
-            break;
+        if (mManualPositioningLogic->isInManualPlacementMode(id))
+        {   //The robot is being manualy positioned on the map so don't interfere
+            MapRobotObjectPtr manualOverride = mManualPositioningLogic->positionedRobot();
+            robotObjectData->setCoords(manualOverride->coords());
+            robotObjectData->setOrientation(manualOverride->orientation());
+            return;  //TODO - alternatively, we might ditch only position and orientation components
         }
     }
 
-    mPlacemarkLogic->addOrUpdatePlacemark(id, robotObjectData);
+    mPlacemarkLogic->addOrUpdatePlacemark(id, objectData);
 }
 
 void RoboticsMap::connectedToRobot(int robotID, bool connection)
@@ -387,6 +373,9 @@ void RoboticsMap::connectedToRobot(int robotID, bool connection)
     {
         mGeoObjectsManager->setConnectedRobotID(robotID);
     }
+
+    mLaserCloudLayer->onConnectedToRobot(robotID, connection);
+    update();
 }
 
 void RoboticsMap::componentComplete()
@@ -564,6 +553,24 @@ void RoboticsMap::updateLaserPointsCloud(int robotID, LaserScanPoints points)
         //qDebug("Received laser cloud");
         mLaserCloudLayer->setVisible(mLocalMapLayer->visible());
         mLaserCloudLayer->updateContent(points, localRobot);
+        update();
+    }
+}
+
+void RoboticsMap::updateDynamicObjects(int robotID, DynamicObjects objects)
+{
+    MapRobotObjectPtr connectedRobot = mGeoObjectsManager->getConnectedRobot();
+
+    if (!connectedRobot)
+    {
+        mDynamicObjectsLayer->setVisible(false);
+        return;
+    }
+
+    if (connectedRobot && connectedRobot->robotID() == robotID)
+    {
+        mDynamicObjectsLayer->updateContent(objects, connectedRobot);
+        mDynamicObjectsLayer->setVisible(true);
         update();
     }
 }

@@ -56,5 +56,6 @@
         <file>icons/orientation.png</file>
         <file>icons/accept.png</file>
         <file>icons/positionRobot.png</file>
+        <file>icons/pedestrian.png</file>
     </qresource>
 </RCC>
