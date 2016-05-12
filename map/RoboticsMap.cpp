@@ -269,6 +269,9 @@ MapReceiverPtr RoboticsMap::mapReceiver() const
 void RoboticsMap::processRobotConnectionStatus(MapRobotObjectPtr newObject)
 {   //TODO - robot connection state responsibility should be just on console side.
     //This is here temporarily to solve compatibility issues with 2 different use cases.
+    if (newObject->state() == RobotStateDisconnected || newObject->state() == RobotStateDisappeared)
+        return;
+
     if (mGeoObjectsManager->isAnyRobotConnected())
     {
         if (mGeoObjectsManager->connectedRobotID() == newObject->robotID())
