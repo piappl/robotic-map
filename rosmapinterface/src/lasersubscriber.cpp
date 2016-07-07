@@ -1,4 +1,5 @@
 #include "lasersubscriber.h"
+#include <tf/transform_listener.h>
 
 using namespace MapAbstraction;
 
@@ -14,6 +15,20 @@ void LaserSubscriber::laserScanCallback(const sensor_msgs::LaserScan::ConstPtr &
 {
     //TODO - add base transform (base_laser_link -> base_link) if needed to (x, y)
 
+    tf::TransformListener laserToBase;
+    tf::StampedTransform transform;
+    bool doTransform = true;
+    try
+    {
+        laserToBase.lookupTransform("/base_laser_link", "/base_link", ros::Time(0), transform);
+    }
+    catch (tf::TransformException ex)
+    {
+        ROS_ERROR("%s", ex.what());
+        //No transform, can't produce meaningful data
+        doTransform = false;
+    }
+
     int pointCount = msg->ranges.size();
     float angle = msg->angle_min;
     LaserScanPoints points;
@@ -28,15 +43,32 @@ void LaserSubscriber::laserScanCallback(const sensor_msgs::LaserScan::ConstPtr &
 
         if (angle > msg->angle_max)
         {
-            qWarning("Error in laser scan data conversion or data corrupted");
+            ROS_WARN("Error in laser scan data conversion or data corrupted");
             break; //Shouldn't happen, but better to skip such doubtful data
         }
 
         float x = distance * cos(angle);
         float y = distance * sin(angle);
-        LaserScanPoint point(x, y);
-        //qDebug("Point |%f|%f|", x, y);
-        points.append(point);
+
+        if (doTransform)
+        {
+            geometry_msgs::PointStamped laser_point, base_point;
+            laser_point.header.frame_id = "laser_frame";
+            laser_point.header.stamp = ros::Time();
+            laser_point.point.x = x;
+            laser_point.point.y = y;
+            laser_point.point.z = 0;
+            laserToBase.transformPoint("/base_link", laser_point, base_point);
+
+            LaserScanPoint point(base_point.point.x, base_point.point.y);
+            //qDebug("Point |%f|%f|", x, y);
+            points.append(point);
+        }
+        else
+        {
+            LaserScanPoint point(x, y);
+            points.append(point);
+        }
 
         angle += msg->angle_increment;
     }

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.11)
 project(rosmapinterface)
 
-find_package(catkin REQUIRED COMPONENTS roscpp std_msgs message_generation)
+find_package(catkin REQUIRED COMPONENTS roscpp std_msgs message_generation tf)
 
 set(CMAKE_PREFIX_PATH ~/Qt5.3.1/5.3/gcc_64/lib/cmake)
 find_package(Qt5Core REQUIRED)
