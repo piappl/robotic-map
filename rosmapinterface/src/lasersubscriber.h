@@ -5,6 +5,7 @@
 #include <map/LaserScanPoint.h>
 #include <ros/ros.h>
 #include <sensor_msgs/LaserScan.h>
+#include <tf/transform_listener.h>
 
 class LaserSubscriber : public QObject
 {
@@ -19,6 +20,7 @@ public:
 private:
     int mID;
     ros::Subscriber mSub;
+    tf::TransformListener laserToBase;
 };
 typedef QSharedPointer<LaserSubscriber> LaserSubscriberPtr;
 

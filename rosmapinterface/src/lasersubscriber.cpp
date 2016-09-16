@@ -15,12 +15,11 @@ void LaserSubscriber::laserScanCallback(const sensor_msgs::LaserScan::ConstPtr &
 {
     //TODO - add base transform (base_laser_link -> base_link) if needed to (x, y)
 
-    tf::TransformListener laserToBase;
     tf::StampedTransform transform;
     bool doTransform = true;
     try
     {
-        laserToBase.lookupTransform("/base_laser_link", "/base_link", ros::Time(0), transform);
+        laserToBase.lookupTransform(msg->header.frame_id, "/base_link", ros::Time(0), transform);
     }
     catch (tf::TransformException ex)
     {
@@ -53,7 +52,7 @@ void LaserSubscriber::laserScanCallback(const sensor_msgs::LaserScan::ConstPtr &
         if (doTransform)
         {
             geometry_msgs::PointStamped laser_point, base_point;
-            laser_point.header.frame_id = "laser_frame";
+            laser_point.header.frame_id = msg->header.frame_id;
             laser_point.header.stamp = ros::Time();
             laser_point.point.x = x;
             laser_point.point.y = y;
