@@ -2,6 +2,8 @@
 #include <marble/MarbleModel.h>
 #include <marble/GeoDataTreeModel.h>
 #include <marble/GeoDataStyle.h>
+#include <marble/GeoDataIconStyle.h>
+#include <marble/GeoDataLabelStyle.h>
 #include <QPainter>
 #include "GeoObjectsManager.h"
 #include "MapRobotObject.h"

@@ -2,6 +2,7 @@
 #define ABSTRACTTRACKER_H
 
 #include "MapLibraryTypes.h"
+#include <marble/GeoDataLatLonBox.h>
 
 class AbstractTracker : public QObject
 {

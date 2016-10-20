@@ -1,6 +1,7 @@
 #ifndef LOCALMAPLAYER_H
 #define LOCALMAPLAYER_H
 
+#include <QMap>
 #include <marble/LayerInterface.h>
 #include <marble/GeoDataLatLonBox.h>
 #include <marble/GeoDataDocument.h>

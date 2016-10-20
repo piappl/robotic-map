@@ -1,5 +1,6 @@
 #include <marble/GeoPainter.h>
 #include <marble/GeoDataCoordinates.h>
+#include <marble/GeoDataLinearRing.h>
 
 #include "GeoCoords.h"
 #include "GeoObjectsManager.h"

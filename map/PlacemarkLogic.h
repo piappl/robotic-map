@@ -2,6 +2,7 @@
 #define PLACEMARKLOGIC_H
 
 #include <QMap>
+#include <marble/GeoDataLatLonBox.h>
 #include "InternalTypesFwd.h"
 #include "MapObjectsFwd.h"
 #include "MapLibraryTypes.h"

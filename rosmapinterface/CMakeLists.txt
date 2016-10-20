@@ -3,10 +3,11 @@ project(rosmapinterface)
 
 find_package(catkin REQUIRED COMPONENTS roscpp std_msgs message_generation)
 
-#set(CMAKE_PREFIX_PATH ~/Qt5.3.1/5.3/gcc_64/lib/cmake)
+#set(CMAKE_PREFIX_PATH ~/Qt/5.7/gcc_64/lib/cmake)
 find_package(Qt5Core REQUIRED)
 find_package(Qt5Quick REQUIRED)
 find_package(Qt5Widgets REQUIRED)
+add_definitions(-std=c++11 -Wall -Wextra)
 
 message(WARNING, "1. |${catkin_INCLUDE_DIRS}|${CATKIN_DEVEL_PREFIX}|${CMAKE_INSTALL_PREFIX}|")
 
