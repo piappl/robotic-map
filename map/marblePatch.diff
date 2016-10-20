@@ -1,81 +1,5 @@
-diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 28c9299..1caed2c 100644
---- a/CMakeLists.txt
-+++ b/CMakeLists.txt
-@@ -5,6 +5,8 @@ project(marble)
- SET(CMAKE_COLOR_MAKEFILE ON)
- # SET(CMAKE_SKIP_RPATH ON)
- 
-+set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--no-undefined")
-+
- set(CMAKE_POSITION_INDEPENDENT_CODE ON)
- 
- # Let CMake find the correct library dir instead of
-@@ -62,13 +64,13 @@ if(CMAKE_SYSTEM_NAME STREQUAL Android)
-    find_package(Qt5Multimedia REQUIRED)
-    set ( MARBLE_NO_WEBKIT TRUE )
- else()
--   find_package(Qt5WebKit)
--   find_package(Qt5WebKitWidgets)
--   find_package(Qt5DBus REQUIRED)
-+   #find_package(Qt5WebKit)
-+   #find_package(Qt5WebKitWidgets)
-+   #find_package(Qt5DBus REQUIRED)
- 
--   if ( NOT Qt5WebKit_FOUND )
-+   #if ( NOT Qt5WebKit_FOUND )
-      set ( MARBLE_NO_WEBKIT TRUE )
--   endif()
-+   #endif()
- endif()
- 
- find_package(Qt5Core REQUIRED)
-@@ -119,6 +121,9 @@ else()
-     option(BUILD_WITH_DBUS "Build the D-Bus interface for the Marble widget" ON)
- endif()
- 
-+option(BUILD_WITH_DBUS "Build the D-Bus interface for the Marble widget" OFF)
-+add_definitions(-DQT_NO_DBUS=1)
-+
- ####################################################
- # build unit tests
- 
-@@ -134,6 +139,8 @@ if( BUILD_MARBLE_TESTS )
- #  SET (MARBLE_TEST_DIR   ${CMAKE_CURRENT_BINARY_DIR}/tests)
- endif( BUILD_MARBLE_TESTS )
- 
-+option(BUILD_MARBLE_TESTS "Build unit tests" OFF)
-+
- ####################################################
- set (PEDANTIC FALSE CACHE BOOL "Determines if we should compile with -Wall -Werror.")
- set (ENABLE_TESTS FALSE CACHE BOOL "Build unit tests?")
-@@ -281,7 +288,7 @@ add_subdirectory(data)
- 
- include(DistTarget)
- 
--add_subdirectory(tests)
-+#add_subdirectory(tests)
- 
- option(BUILD_MARBLE_TOOLS "Build various tools related to Marble" OFF)
- add_feature_info("Marble tools" BUILD_MARBLE_TOOLS "Build various Marble tools for e.g. file format conversion. Toggle with BUILD_MARBLE_TOOLS=YES/NO.")
-diff --git a/MarbleMacros.cmake b/MarbleMacros.cmake
-index 57c3321..ad9b51f 100644
---- a/MarbleMacros.cmake
-+++ b/MarbleMacros.cmake
-@@ -31,6 +31,11 @@ macro(qt_generate_moc)
-   qt5_generate_moc(${ARGN})
- endmacro()
- 
-+if(COMMAND cmake_policy)
-+  cmake_policy(SET CMP0003 NEW)
-+endif(COMMAND cmake_policy)
-+
-+
- # the place to put in common cmake macros
- # this is needed to minimize the amount of errors to do
- macro( marble_add_plugin _target_name )
 diff --git a/data/maps/earth/openstreetmap/openstreetmap.dgml b/data/maps/earth/openstreetmap/openstreetmap.dgml
-index c3ebe94..3340978 100644
+index c3ebe94..edf9a36 100644
 --- a/data/maps/earth/openstreetmap/openstreetmap.dgml
 +++ b/data/maps/earth/openstreetmap/openstreetmap.dgml
 @@ -17,8 +17,8 @@
@@ -85,7 +9,7 @@ index c3ebe94..3340978 100644
 -        <minimum>   900  </minimum>
 -        <maximum>  3500  </maximum>
 +        <minimum>  1400  </minimum>
-+        <maximum>  3800  </maximum>
++        <maximum>  3900  </maximum>
          <discrete> true </discrete>
        </zoom>
      </head>
@@ -94,40 +18,18 @@ index c3ebe94..3340978 100644
            <sourcedir format="PNG"> earth/openstreetmap </sourcedir>
            <tileSize width="256" height="256"/>
 -          <storageLayout levelZeroColumns="1" levelZeroRows="1" maximumTileLevel="19" mode="OpenStreetMap"/>
-+          <storageLayout levelZeroColumns="1" levelZeroRows="1" maximumTileLevel="20" mode="OpenStreetMap"/>
++          <storageLayout levelZeroColumns="1" levelZeroRows="1" maximumTileLevel="21" mode="OpenStreetMap"/>
            <projection name="Mercator"/>
            <downloadUrl protocol="https" host="a.tile.openstreetmap.org" path="/"/>
            <downloadUrl protocol="https" host="b.tile.openstreetmap.org" path="/"/>
-diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index 063db88..55f0c65 100644
---- a/src/CMakeLists.txt
-+++ b/src/CMakeLists.txt
-@@ -49,7 +49,7 @@ endif()
- 
- add_subdirectory( 3rdparty/sgp4 )
- add_subdirectory( lib/marble )
--add_subdirectory( lib/astro )
-+#add_subdirectory( lib/astro )
- add_subdirectory( lib/marble/declarative )
- 
- add_subdirectory( plugins )
 diff --git a/src/lib/marble/CMakeLists.txt b/src/lib/marble/CMakeLists.txt
-index 42fe56f..ba6634f 100644
+index a47b568..9866945 100644
 --- a/src/lib/marble/CMakeLists.txt
 +++ b/src/lib/marble/CMakeLists.txt
-@@ -364,7 +364,7 @@ qt_wrap_ui(marblewidget_SRCS ${marblewidget_UI})
- ADD_LIBRARY(${MARBLEWIDGET} SHARED ${marblewidget_SRCS} ${SOURCES_UI_HDRS})
- 
- # link with libastro
--TARGET_LINK_LIBRARIES (${MARBLEWIDGET} astro)
-+TARGET_LINK_LIBRARIES (${MARBLEWIDGET})
- 
- # link against zlib
- TARGET_LINK_LIBRARIES (${MARBLEWIDGET} ${ZLIB_LIBRARIES})
-@@ -490,6 +490,27 @@ install( FILES
-     ClipPainter.h
-     GeoGraphicsScene.h
-     GeoDataTreeModel.h
+@@ -562,8 +562,33 @@ install( FILES
+     geodata/parser/GeoDocument.h
+     geodata/parser/GeoDataTypes.h
+     geodata/writer/GeoWriter.h
 +    geodata/scene/GeoSceneIcon.h
 +    geodata/scene/GeoSceneTileDataset.h
 +    geodata/scene/GeoSceneVectorTileDataset.h
@@ -136,6 +38,7 @@ index 42fe56f..ba6634f 100644
 +    geodata/scene/GeoSceneZoom.h
 +    geodata/scene/GeoSceneLegend.h
 +    geodata/scene/GeoSceneTextureTileDataset.h
++    geodata/scene/GeoSceneAbstractTileProjection.h
 +    geodata/scene/GeoSceneAbstractDataset.h
 +    geodata/scene/GeoSceneItem.h
 +    geodata/scene/GeoSceneLicense.h
@@ -149,25 +52,19 @@ index 42fe56f..ba6634f 100644
 +    geodata/scene/GeoSceneProperty.h
 +    geodata/scene/GeoSceneLayer.h
 +    geodata/scene/GeoScenePalette.h
-     geodata/data/GeoDataAbstractView.h
-     geodata/data/GeoDataAccuracy.h
-     geodata/data/GeoDataBalloonStyle.h
-@@ -534,6 +555,10 @@ install( FILES
-     geodata/geodata_export.h
-     geodata/parser/GeoDocument.h
-     geodata/writer/GeoWriter.h
+     routing/RoutingWidget.h
+     routing/RoutingManager.h
 +    declarative/MarbleQuickItem.h
 +    declarative/Placemark.h
 +    declarative/Coordinate.h
-+    declarative/marble_declarative_export.h
-     routing/RoutingWidget.h
-     routing/RoutingManager.h
      TileCreator.h
+     PluginManager.h
+     PluginInterface.h
 diff --git a/src/lib/marble/PlacemarkLayout.cpp b/src/lib/marble/PlacemarkLayout.cpp
-index 36754a0..c238e69 100644
+index 0677983..671587d 100644
 --- a/src/lib/marble/PlacemarkLayout.cpp
 +++ b/src/lib/marble/PlacemarkLayout.cpp
-@@ -294,6 +294,7 @@ void PlacemarkLayout::addPlacemarks( QModelIndex parent, int first, int last )
+@@ -305,6 +305,7 @@ void PlacemarkLayout::addPlacemarks( const QModelIndex& parent, int first, int l
          TileId key = TileId::fromCoordinates( coordinates, zoomLevel );
          m_placemarkCache[key].append( placemark );
      }
@@ -175,186 +72,16 @@ index 36754a0..c238e69 100644
      emit repaintNeeded();
  }
  
-diff --git a/src/lib/marble/SunLocator.cpp b/src/lib/marble/SunLocator.cpp
-index 7c2ff26..6ee5f14 100644
---- a/src/lib/marble/SunLocator.cpp
-+++ b/src/lib/marble/SunLocator.cpp
-@@ -22,7 +22,7 @@
-  
- #include "MarbleDebug.h"
- 
--#include "src/lib/astro/solarsystem.h"
-+//#include "src/lib/astro/solarsystem.h"
- 
- #include <cmath>
- // M_PI is sometimes defined in <cmath>
-@@ -70,6 +70,7 @@ SunLocator::~SunLocator()
- 
- void SunLocator::updatePosition()
+diff --git a/src/lib/marble/geodata/scene/GeoSceneTextureTileDataset.h b/src/lib/marble/geodata/scene/GeoSceneTextureTileDataset.h
+index 8bd9437..835b91e 100644
+--- a/src/lib/marble/geodata/scene/GeoSceneTextureTileDataset.h
++++ b/src/lib/marble/geodata/scene/GeoSceneTextureTileDataset.h
+@@ -21,7 +21,7 @@
+ namespace Marble
  {
-+    /*
-     QString planetId = d->m_planet->id();
-     SolarSystem sys;
  
-@@ -90,6 +91,7 @@ void SunLocator::updatePosition()
-     sys.getPlanetographic (ra, decl, lon, lat);
-     d->m_lon = lon * DEG2RAD;
-     d->m_lat = lat * DEG2RAD;
-+    */
- }
+-class GeoSceneTextureTileDataset : public GeoSceneTileDataset
++class GEODATA_EXPORT GeoSceneTextureTileDataset : public GeoSceneTileDataset
+ {
+  public:
  
- 
-diff --git a/src/plugins/CMakeLists.txt b/src/plugins/CMakeLists.txt
-index cb5915f..a7d3784 100644
---- a/src/plugins/CMakeLists.txt
-+++ b/src/plugins/CMakeLists.txt
-@@ -1,8 +1,8 @@
- if(NOT CMAKE_SYSTEM_NAME STREQUAL Android)
--    add_subdirectory( designer )
--    add_subdirectory( templates )
-+    #add_subdirectory( designer )
-+    #add_subdirectory( templates )
- endif()
- 
- add_subdirectory( render )
--add_subdirectory( positionprovider )
-+#add_subdirectory( positionprovider )
- add_subdirectory( runner )
-diff --git a/src/plugins/render/CMakeLists.txt b/src/plugins/render/CMakeLists.txt
-index 4598358..40831fc 100644
---- a/src/plugins/render/CMakeLists.txt
-+++ b/src/plugins/render/CMakeLists.txt
-@@ -2,57 +2,57 @@
- # add_subdirectory( test )
- 
- # Display a control or a screen box
--add_subdirectory( compass )
--add_subdirectory( elevationprofilefloatitem )
-+#add_subdirectory( compass )
-+#add_subdirectory( elevationprofilefloatitem )
- # add_subdirectory( fileview )
--add_subdirectory( gpsinfo )
--add_subdirectory( license )
--add_subdirectory( mapscale )
--add_subdirectory( navigation )
--add_subdirectory( overviewmap )
--add_subdirectory( progress )
--add_subdirectory( routing )
--add_subdirectory( speedometer )
-+#add_subdirectory( gpsinfo )
-+#add_subdirectory( license )
-+#add_subdirectory( mapscale )
-+#add_subdirectory( navigation )
-+#add_subdirectory( overviewmap )
-+#add_subdirectory( progress )
-+#add_subdirectory( routing )
-+#add_subdirectory( speedometer )
- 
- # Display geographical information on the map
--add_subdirectory( annotate )
--add_subdirectory( crosshairs )
--add_subdirectory( eclipses )
--add_subdirectory( elevationprofilemarker )
--add_subdirectory( graticule )
--add_subdirectory( measure )
--add_subdirectory( positionmarker )
--add_subdirectory( atmosphere )
--add_subdirectory( stars )
-+#add_subdirectory( annotate )
-+#add_subdirectory( crosshairs )
-+#add_subdirectory( eclipses )
-+#add_subdirectory( elevationprofilemarker )
-+#add_subdirectory( graticule )
-+#add_subdirectory( measure )
-+#add_subdirectory( positionmarker )
-+#add_subdirectory( atmosphere )
-+#add_subdirectory( stars )
- add_subdirectory( sun )
- 
- # Display online information
--add_subdirectory( earthquake )
--add_subdirectory(foursquare)
-+#add_subdirectory( earthquake )
-+#add_subdirectory(foursquare)
- # Disabled for now until legal issues wrt to the API
- # and terms of service of opencaching are cleared up.
- #add_subdirectory( opencaching )
- if(NOT MARBLE_NO_WEBKIT)
--add_subdirectory( opencachingcom )
--add_subdirectory( opendesktop )
--add_subdirectory( photo )
-+#add_subdirectory( opencachingcom )
-+#add_subdirectory( opendesktop )
-+#add_subdirectory( photo )
- endif()
- # add_subdirectory( panoramio )
--add_subdirectory( postalcode )
--add_subdirectory( satellites )
-+#add_subdirectory( postalcode )
-+#add_subdirectory( satellites )
- # add_subdirectory ( twitter )
- if(NOT MARBLE_NO_WEBKIT)
--add_subdirectory( wikipedia )
-+#add_subdirectory( wikipedia )
- add_subdirectory( weather )
- endif()
- 
- # FIXME: The inhibit-screensaver plugin stresses the term render plugin a bit far.
- # It should be moved to a new plugin type later.
--add_subdirectory( inhibit-screensaver )
-+#add_subdirectory( inhibit-screensaver )
- 
- find_package( Perl )
- marble_set_package_properties( Perl PROPERTIES URL "http://www.perl.org" )
- marble_set_package_properties( Perl PROPERTIES TYPE OPTIONAL PURPOSE "generation of sources in the APRS plugin" )
- if( PERL_FOUND )
--    add_subdirectory( aprs )
-+    #add_subdirectory( aprs )
- endif()
-diff --git a/src/plugins/runner/CMakeLists.txt b/src/plugins/runner/CMakeLists.txt
-index 005f1b6..024f692 100644
---- a/src/plugins/runner/CMakeLists.txt
-+++ b/src/plugins/runner/CMakeLists.txt
-@@ -1,26 +1,26 @@
- # Search and/or reverse geocoding
--add_subdirectory( hostip )
--add_subdirectory( latlon )
--add_subdirectory( local-osm-search )
--add_subdirectory( localdatabase )
--add_subdirectory( nominatim-search )
--add_subdirectory( nominatim-reversegeocoding )
--add_subdirectory( gosmore-reversegeocoding )
-+#add_subdirectory( hostip )
-+#add_subdirectory( latlon )
-+#add_subdirectory( local-osm-search )
-+#add_subdirectory( localdatabase )
-+#add_subdirectory( nominatim-search )
-+#add_subdirectory( nominatim-reversegeocoding )
-+#add_subdirectory( gosmore-reversegeocoding )
- 
- # Routing
--add_subdirectory( gosmore-routing )
--add_subdirectory( mapquest )
--add_subdirectory( monav )
--add_subdirectory( openrouteservice )
--add_subdirectory( open-source-routing-machine )
--add_subdirectory( routino )
--add_subdirectory( yours )
--add_subdirectory( cyclestreets )
-+#add_subdirectory( gosmore-routing )
-+#add_subdirectory( mapquest )
-+#add_subdirectory( monav )
-+#add_subdirectory( openrouteservice )
-+#add_subdirectory( open-source-routing-machine )
-+#add_subdirectory( routino )
-+#add_subdirectory( yours )
-+#add_subdirectory( cyclestreets )
- # traveling-salesman works, but it is quite slow (tested version 1.0.3-RC1)
- #add_subdirectory( traveling-salesman )
- 
- #Parsing
--add_subdirectory( cache )
-+#add_subdirectory( cache )
- add_subdirectory( gpx )
- add_subdirectory( json )
- add_subdirectory( kml )

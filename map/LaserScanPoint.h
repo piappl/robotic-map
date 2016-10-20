@@ -8,7 +8,7 @@
 namespace MapAbstraction
 {
     typedef QPointF LaserScanPoint; //always in local map coordinates
-    typedef QVector<LaserScanPoint> LaserScanPoints; //implicit memory sharing
+    typedef QList<LaserScanPoint> LaserScanPoints; //implicit memory sharing
 }
 
 #endif // LASERSCANPOINT_H

@@ -2,7 +2,7 @@
 set -e
 
 if [ "$#" -ne 1 ]; then
-  echo "Provide Cmake Prefix Path for QT (i.e. ~/Qt5.3.1/5.3/gcc_64/lib/cmake/)"
+  echo "Provide Cmake Prefix Path for QT (i.e. ~/Qt/5.7/gcc_64/lib/cmake/)"
   exit 1
 fi
 

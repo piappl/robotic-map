@@ -4,6 +4,7 @@
 #include <marble/MarbleMap.h>
 #include <marble/ViewportParams.h>
 #include <marble/GeoDataLinearRing.h>
+#include <marble/GeoDataLatLonAltBox.h>
 #include "LocalMapLogic.h"
 #include "MapRobotObject.h"
 #include "MapLibraryHelpers.h"

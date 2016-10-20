@@ -2,6 +2,7 @@
 #define TRACKINGCAMERA_H
 
 #include <QTimer>
+#include <marble/GeoDataLatLonBox.h>
 #include "InternalTypesFwd.h"
 #include "MapLibraryTypes.h"
 #include "GeoObjectID.h"
