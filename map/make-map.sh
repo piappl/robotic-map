@@ -27,7 +27,7 @@ if [ ! -d "$marbleSource" ]; then
    cd $marbleSource
    echo "****git update and checkout to supported version"
    git remote update
-   git checkout v15.11.80
+   git checkout 87c0182d3b0a38c58c11249870d5202f944d9acf
    echo "****Applying patch"
    git apply $mapwidgetMarblePatchPath
    git add --all
