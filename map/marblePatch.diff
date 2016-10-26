@@ -72,6 +72,27 @@ index 0677983..671587d 100644
      emit repaintNeeded();
  }
  
+diff --git a/src/lib/marble/declarative/MarbleQuickItem.h b/src/lib/marble/declarative/MarbleQuickItem.h
+index 151bc39..c5d308e 100644
+--- a/src/lib/marble/declarative/MarbleQuickItem.h
++++ b/src/lib/marble/declarative/MarbleQuickItem.h
+@@ -11,7 +11,6 @@
+ #ifndef MARBLEQUICKITEM_H
+ #define MARBLEQUICKITEM_H
+ 
+-#include "marble_declarative_export.h"
+ #include <QSharedPointer>
+ #include <QQuickPaintedItem>
+ #include "GeoDataAccuracy.h"
+@@ -30,7 +29,7 @@ namespace Marble
+     class MarbleQuickItemPrivate;
+ 
+     //Class is still being developed
+-    class MARBLE_DECLARATIVE_EXPORT MarbleQuickItem : public QQuickPaintedItem
++    class Q_DECL_EXPORT MarbleQuickItem : public QQuickPaintedItem
+     {
+     Q_OBJECT
+ 
 diff --git a/src/lib/marble/geodata/scene/GeoSceneTextureTileDataset.h b/src/lib/marble/geodata/scene/GeoSceneTextureTileDataset.h
 index 8bd9437..835b91e 100644
 --- a/src/lib/marble/geodata/scene/GeoSceneTextureTileDataset.h
