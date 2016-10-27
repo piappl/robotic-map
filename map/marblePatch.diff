@@ -1,32 +1,38 @@
 diff --git a/data/maps/earth/openstreetmap/openstreetmap.dgml b/data/maps/earth/openstreetmap/openstreetmap.dgml
-index c3ebe94..edf9a36 100644
+index c3ebe94..2fb6d0e 100644
 --- a/data/maps/earth/openstreetmap/openstreetmap.dgml
 +++ b/data/maps/earth/openstreetmap/openstreetmap.dgml
-@@ -17,8 +17,8 @@
+@@ -17,7 +17,7 @@
        <visible>true</visible>
        <description><![CDATA[<p>A <i>global roadmap</i> created by the OpenStreetMap (OSM) project.</p><p>OSM is an open community which creates free editable maps. The OSM data was rendered using Mapnik.</p>]]></description>
        <zoom>
 -        <minimum>   900  </minimum>
--        <maximum>  3500  </maximum>
 +        <minimum>  1400  </minimum>
-+        <maximum>  3900  </maximum>
+         <maximum>  3500  </maximum>
          <discrete> true </discrete>
        </zoom>
-     </head>
 @@ -31,7 +31,7 @@
          <texture name="mapnik_data" expire="604800">
            <sourcedir format="PNG"> earth/openstreetmap </sourcedir>
            <tileSize width="256" height="256"/>
 -          <storageLayout levelZeroColumns="1" levelZeroRows="1" maximumTileLevel="19" mode="OpenStreetMap"/>
-+          <storageLayout levelZeroColumns="1" levelZeroRows="1" maximumTileLevel="21" mode="OpenStreetMap"/>
++          <storageLayout levelZeroColumns="1" levelZeroRows="1" maximumTileLevel="20" mode="OpenStreetMap"/>
            <projection name="Mercator"/>
            <downloadUrl protocol="https" host="a.tile.openstreetmap.org" path="/"/>
            <downloadUrl protocol="https" host="b.tile.openstreetmap.org" path="/"/>
 diff --git a/src/lib/marble/CMakeLists.txt b/src/lib/marble/CMakeLists.txt
-index a47b568..9866945 100644
+index a47b568..5c862f0 100644
 --- a/src/lib/marble/CMakeLists.txt
 +++ b/src/lib/marble/CMakeLists.txt
-@@ -562,8 +562,33 @@ install( FILES
+@@ -378,6 +378,7 @@ target_link_libraries(marblewidget
+     LINK_PUBLIC
+         Qt5::Xml
+         Qt5::Gui
++	Qt5::Quick
+         Qt5::Widgets
+         Qt5::Network
+     LINK_PRIVATE
+@@ -562,8 +563,32 @@ install( FILES
      geodata/parser/GeoDocument.h
      geodata/parser/GeoDataTypes.h
      geodata/writer/GeoWriter.h
@@ -38,7 +44,6 @@ index a47b568..9866945 100644
 +    geodata/scene/GeoSceneZoom.h
 +    geodata/scene/GeoSceneLegend.h
 +    geodata/scene/GeoSceneTextureTileDataset.h
-+    geodata/scene/GeoSceneAbstractTileProjection.h
 +    geodata/scene/GeoSceneAbstractDataset.h
 +    geodata/scene/GeoSceneItem.h
 +    geodata/scene/GeoSceneLicense.h
@@ -73,7 +78,7 @@ index 0677983..671587d 100644
  }
  
 diff --git a/src/lib/marble/declarative/MarbleQuickItem.h b/src/lib/marble/declarative/MarbleQuickItem.h
-index 151bc39..c5d308e 100644
+index 151bc39..c528030 100644
 --- a/src/lib/marble/declarative/MarbleQuickItem.h
 +++ b/src/lib/marble/declarative/MarbleQuickItem.h
 @@ -11,7 +11,6 @@
@@ -106,3 +111,17 @@ index 8bd9437..835b91e 100644
  {
   public:
  
+diff --git a/src/plugins/CMakeLists.txt b/src/plugins/CMakeLists.txt
+index cb5915f..e4ad30b 100644
+--- a/src/plugins/CMakeLists.txt
++++ b/src/plugins/CMakeLists.txt
+@@ -3,6 +3,6 @@ if(NOT CMAKE_SYSTEM_NAME STREQUAL Android)
+     add_subdirectory( templates )
+ endif()
+ 
+-add_subdirectory( render )
+-add_subdirectory( positionprovider )
+-add_subdirectory( runner )
++#add_subdirectory( render )
++#add_subdirectory( positionprovider )
++#add_subdirectory( runner )
