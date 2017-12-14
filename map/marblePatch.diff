@@ -32,10 +32,11 @@ index a47b568..5c862f0 100644
          Qt5::Widgets
          Qt5::Network
      LINK_PRIVATE
-@@ -562,8 +563,32 @@ install( FILES
+@@ -562,8 +563,33 @@ install( FILES
      geodata/parser/GeoDocument.h
      geodata/parser/GeoDataTypes.h
      geodata/writer/GeoWriter.h
++    geodata/scene/GeoSceneAbstractTileProjection.h
 +    geodata/scene/GeoSceneIcon.h
 +    geodata/scene/GeoSceneTileDataset.h
 +    geodata/scene/GeoSceneVectorTileDataset.h
