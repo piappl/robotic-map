@@ -6,17 +6,18 @@ find_package(Qt5Quick REQUIRED)
 find_package(Qt5Widgets REQUIRED)
 find_package(Marble REQUIRED)
 
-SET(CMAKE_COLOR_MAKEFILE ON)
+set(CMAKE_COLOR_MAKEFILE ON)
 set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--no-undefined")
 set(CMAKE_AUTOMOC TRUE)
-message(Found marble ${MARBLE_LIBRARIES} ${MARBLE_PATH})
+
+add_definitions("--std=c++11")
 
 include_directories(
-	${CMAKE_CURRENT_SOURCE_DIR}
-	${CMAKE_INSTALL_PREFIX}/include/marble #MARBLE_INCLUDE_DIRS is empty for some reason
-	)
-			
-set(SOURCES 
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${MARBLE_INCLUDE_DIR}
+)
+
+set(SOURCES
     MapFactory.cpp
     MapIconProvider.cpp
     RegionsLayer.cpp
@@ -56,10 +57,18 @@ set(SOURCES
     LaserCloudLayer.cpp
     RobotEditor.cpp
     RobotManualPlacementLayer.cpp
+    DynamicObjectsLayer.cpp
     ManualPositioningLogic.cpp
     MapIconPainter.cpp
     MapIcons.cpp
-    ConfigurationLoader.cpp)
+    ConfigurationLoader.cpp
+    SensorReadings.cpp
+    SensorDataLayer.cpp
+    SensorLayerControlGui.cpp
+    ISensorReadings.cpp
+    Layers.cpp
+    MapLayerInterface.cpp
+    WaypointsLayer.cpp)
 
 set(INSTALL_HEADERS
     IGeoMapFwd.h
@@ -69,6 +78,7 @@ set(INSTALL_HEADERS
     MapWrap.h
     MapRobotObject.h
     MapPlaceObject.h
+    MapPlaces.h
     MapOrderedObject.h
     MapPolygonNodeObject.h
     MapWaypointObject.h
@@ -79,14 +89,25 @@ set(INSTALL_HEADERS
     GeoMapSender.h
     GeoLocalMapReceiver.h
     LaserScanPoint.h
-    Orientation.h)
+    Orientation.h
+    UncertainCoords.h
+    SensorInfo.h
+    SensorData.h
+    Mission.h
+    ISensorReadings.h
+)
 
 qt5_add_resources(RESOURCES resources.qrc)
 add_library(mapwidget SHARED ${SOURCES} ${RESOURCES})
-target_link_libraries(mapwidget Qt5::Widgets Qt5::Quick Qt5::Core ${MARBLE_LIBRARIES} marbledeclarative)
+target_link_libraries(mapwidget Qt5::Widgets Qt5::Quick Qt5::Core Marble MarbleDeclarative)
 
-INSTALL(FILES ${INSTALL_HEADERS} DESTINATION ${CMAKE_INSTALL_PREFIX}/include/map)
-INSTALL_TARGETS(/lib RUNTIME_DIRECTORY /lib mapwidget)
+install(FILES ${INSTALL_HEADERS} DESTINATION ${CMAKE_INSTALL_PREFIX}/include/map)
+install_targets(/lib RUNTIME_DIRECTORY /lib mapwidget)
+set(localmap_parentdir /share/maps)
+install(DIRECTORY localmap DESTINATION ${localmap_parentdir})
 
-
-
+#ADD_CUSTOM_COMMAND(TARGET mapwidget
+#          POST_BUILD
+#          COMMAND ${CMAKE_COMMAND} -E make_directory /share/maps/localmap
+#          COMMAND ${CMAKE_COMMAND} -E copy localmap/* /share/maps/localmap/.
+#)

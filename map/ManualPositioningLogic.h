@@ -4,12 +4,12 @@
 #include <QObject>
 #include "MapObjectsFwd.h"
 #include "InternalTypesFwd.h"
-#include "MapLayersFwd.h"
 #include "PlacemarkType.h"
 #include "MapLibraryTypes.h"
 #include "GeoCoords.h"
 #include "GeoObjectID.h"
 #include "Orientation.h"
+#include "RobotManualPlacementLayer.h"
 
 namespace Marble { class MarbleMap; }
 
@@ -29,7 +29,7 @@ public slots:
 
 public:
     ManualPositioningLogic(PlacemarkLogicPtr logic, MapAbstraction::GeoObjectsManagerPtr geoManager,
-                           Marble::MarbleMap *map, Marble::RobotManualPlacementLayerPtr placementLayer);
+                           Marble::MarbleMap *map, MapAbstraction::RobotManualPlacementLayerPtr placementLayer);
 
     bool isInManualPlacementMode(GeoObjectID id) const;
     MapAbstraction::MapRobotObjectPtr positionedRobot(); //operates on a clone of robot object to use the comparison mechanism later
@@ -40,7 +40,7 @@ private:
     PlacemarkLogicPtr mPlacemarkLogic;
     MapAbstraction::GeoObjectsManagerPtr mGeoManager;
     Marble::MarbleMap *mMarbleMap;
-    Marble::RobotManualPlacementLayerPtr mPlacementLayer;
+    MapAbstraction::RobotManualPlacementLayerPtr mPlacementLayer;
 
     bool mManualPlacementMode;
     GeoObjectID mManipulatedObjectID;

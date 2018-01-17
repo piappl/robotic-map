@@ -1,16 +1,15 @@
 #include <QMouseEvent>
-
 #include <marble/GeoDataLineString.h>
 #include <marble/GeoPainter.h>
-#include <marble/MarbleMap.h>
-
 #include "MapLibraryHelpers.h"
 #include "RobotManualPlacementLayer.h"
+#include "RoboticsMap.h"
 
 using namespace Marble;
+using namespace MapAbstraction;
 
-RobotManualPlacementLayer::RobotManualPlacementLayer(MarbleMap *map)
-    : mVisible(false), mMap(map), mTracking(false)
+RobotManualPlacementLayer::RobotManualPlacementLayer(RoboticsMap *rm)
+    : MapLayerInterface(rm), mMap(rm->map())
 {
 }
 
@@ -21,7 +20,7 @@ QStringList RobotManualPlacementLayer::renderPosition() const
 
 bool RobotManualPlacementLayer::render(GeoPainter *painter, ViewportParams *, const QString &, GeoSceneLayer *)
 {   //TODO - check if it is in viewport;
-    if (!mVisible || !mReferenceCoords.isValid() || !mMouseCoords.isValid() || !mTracking)
+    if (!visible() || !mReferenceCoords.isValid() || !mMouseCoords.isValid() || !mTracking)
         return true;
 
     QPen pen(Qt::red);
@@ -39,19 +38,9 @@ bool RobotManualPlacementLayer::render(GeoPainter *painter, ViewportParams *, co
     return true;
 }
 
-void RobotManualPlacementLayer::setVisibility(bool visible)
-{
-    mVisible = visible;
-}
-
-bool RobotManualPlacementLayer::visible() const
-{
-    return mVisible;
-}
-
 bool RobotManualPlacementLayer::handleEvent(QObject *, QEvent *e)
 {
-    if (!mVisible || !mReferenceCoords.isValid())
+    if (!visible() || !mReferenceCoords.isValid())
         return false;
 
     if (e->type() == QEvent::MouseButtonPress

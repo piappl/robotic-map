@@ -4,19 +4,17 @@
 #include "GeoObjectsManager.h"
 #include "MapRobotObject.h"
 #include "MapLibraryHelpers.h"
-#include "RobotManualPlacementLayer.h"
 
 using namespace MapAbstraction;
 
 ManualPositioningLogic::ManualPositioningLogic(PlacemarkLogicPtr logic,
-                 MapAbstraction::GeoObjectsManagerPtr geoManager, Marble::MarbleMap *map,
-                 Marble::RobotManualPlacementLayerPtr placementLayer)
+                 GeoObjectsManagerPtr geoManager, Marble::MarbleMap *map,
+                 RobotManualPlacementLayerPtr placementLayer)
     : mPlacemarkLogic(logic), mGeoManager(geoManager), mMarbleMap(map),
       mPlacementLayer(placementLayer), mManualPlacementMode(false)
 {
     connect(mPlacementLayer.data(), SIGNAL(orientationUpdate(MapAbstraction::GeoCoords)),
             this, SLOT(orientateTo(MapAbstraction::GeoCoords)));
-    mPlacementLayer->setVisibility(false);
 }
 
 void ManualPositioningLogic::startPlacement()
@@ -26,7 +24,7 @@ void ManualPositioningLogic::startPlacement()
 
 void ManualPositioningLogic::orientationEdit(bool enabled)
 {
-    mPlacementLayer->setVisibility(enabled);
+    mPlacementLayer->setVisible(enabled);
 }
 
 bool ManualPositioningLogic::isInManualPlacementMode(GeoObjectID id) const
@@ -118,7 +116,7 @@ void ManualPositioningLogic::finalizePlacement(bool persist)
         return;
 
     mManualPlacementMode = false;
-    mPlacementLayer->setVisibility(false);
+    mPlacementLayer->setVisible(false);
     MapRobotObjectPtr robot = positionedRobot();
     robot->setOrientation(mOldOrientation);
     robot->setCoords(mOldCoords);

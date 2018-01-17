@@ -68,12 +68,8 @@ private:
     bool mIconsSimplified;
     QMap<PlacemarkType, bool> mPlacemarksVisibilityMap;
     MapAbstraction::MapLogPlacemarkDataPtr mMapLog;
-
     Marble::MarbleModel* mMarbleModel;
     MapAbstraction::GeoObjectsManagerPtr mGeoManager;
-
-    //For auto-releasing memory allocated by marble styles
-    QList<QSharedPointer<Marble::GeoDataStyle> > mStyles;
     MapAbstraction::MapIconProvider mIconProvider;
 };
 

@@ -4,14 +4,16 @@
 #include <QFileInfo>
 #include <QSharedPointer>
 #include <marble/MarbleQuickItem.h>
-#include "MapLayersFwd.h"
 #include "LocalMapLoader.h"
 #include "MapLibraryTypes.h"
 #include "InternalTypesFwd.h"
 #include "IGeoMap.h"
 #include "LaserScanPoint.h"
+#include "DynamicObject.h"
 #include "GeoCoords.h"
 #include "Orientation.h"
+#include "SensorReadings.h"
+#include "Layers.h"
 
 class RoboticsMap : public Marble::MarbleQuickItem, public MapAbstraction::IGeoMap
 {
@@ -28,20 +30,23 @@ class RoboticsMap : public Marble::MarbleQuickItem, public MapAbstraction::IGeoM
         RoboticsMap(QQuickItem* parent = NULL);
 
     // QQmlParserStatus interface
-    public:
         void componentComplete();
 
     // IGeoMap interface
-    public:
         MapAbstraction::GeoMapSenderPtr sender() const;
         MapAbstraction::GeoLocalMapReceiverPtr localMapReceiver() const;
+        MapAbstraction::ISensorReadingsPtr sensorReadingsInterface() const;
 
-    // IMapSignalReceiver interface
+        MapAbstraction::GeoObjectsManagerPtr geoManager() { return mGeoObjectsManager; }
+        MapAbstraction::MapLogPlacemarkDataPtr mapLog();
+
     public slots:
-        void updatePlacemark(GeoObjectID id, MapAbstraction::MapRobotObjectPtr newObject);
+        void updatePlacemark(GeoObjectID id, MapAbstraction::MapObjectPtr newObject);
+        void updateFileGeometry(const QString &fileSource);
+        void removeGeometry(const QString &keyName);
         void connectedToRobot(int robotID, bool connected);
+        void updateRequested();
 
-    public slots:
         void center(int placemarkID);
         void center(const Marble::GeoDataLatLonBox& box);
         void handlePinchStart(QPointF center);
@@ -70,6 +75,8 @@ class RoboticsMap : public Marble::MarbleQuickItem, public MapAbstraction::IGeoM
         void updateLocalMap(QString mapPng, qreal resolution, MapAbstraction::GeoCoords approxCenter,
                             MapAbstraction::Orientation rotation, QPointF origin);
         void updateLaserPointsCloud(int robotID, MapAbstraction::LaserScanPoints);
+        void updateDynamicObjects(int robotID, MapAbstraction::DynamicObjects);
+        void updateMapPlaces(MapAbstraction::MapPlaces places);
 
     private:
         void processRobotConnectionStatus(MapAbstraction::MapRobotObjectPtr newObject);
@@ -81,27 +88,23 @@ class RoboticsMap : public Marble::MarbleQuickItem, public MapAbstraction::IGeoM
         void showPath(const GeoObjectID &id);
         void geometryChanged(const QRectF & newGeometry, const QRectF & oldGeometry);
         int getScaledZoom(int oldZoom, int oldWindowWidth);
+        void broadcastRelativePosition(MapAbstraction::MapRobotObjectPtr robotObjectData);
 
         MapAbstraction::GeoObjectsManagerPtr mGeoObjectsManager;
         MapKeyboardInputHandlerPtr mInputHandler;
         PlacemarkLogicPtr mPlacemarkLogic;
         TrackingCameraPtr mTrackingCamera;
 
-        Marble::PathsLayerPtr mPathsLayer;
-        Marble::RegionsLayerPtr mRegionsLayer;
-        Marble::CrosshairLayerPtr mCrosshairLayer;
-        Marble::LocalMapLayerPtr mLocalMapLayer;
-        Marble::LaserCloudLayerPtr mLaserCloudLayer;
-        Marble::RobotManualPlacementLayerPtr mRobotPlacementLayer;
+        MapAbstraction::Layers mLayers;
 
-        bool mPathsVisible;
-        bool mScaling;
+        bool mPathsVisible = false;
         TextureManagerPtr mTextureManager;
         MapPlacesManagerPtr mMapPlacesManager;
         MapAbstraction::GeoMapSenderPtr mSender;
         MapAbstraction::GeoLocalMapReceiverPtr mLocalMapReceiver;
         MapAbstraction::LocalMapLoaderPtr mLocalMapLoader;
         ManualPositioningLogicPtr mManualPositioningLogic;
+        MapAbstraction::SensorReadingsPtr mSensorReadings;
 };
 
 

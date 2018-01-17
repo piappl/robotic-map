@@ -2,6 +2,7 @@
     <qresource prefix="/mapwidget">
         <file alias="MapButton.qml">qml/MapButton.qml</file>
         <file alias="MapItem.qml">qml/MapItem.qml</file>
+        <file alias="SensorDataItem.qml">qml/SensorDataItem.qml</file>
         <file>icons/zoomIn.png</file>
         <file>icons/zoomOut.png</file>
         <file>icons/defaultRobot.png</file>
@@ -56,5 +57,8 @@
         <file>icons/orientation.png</file>
         <file>icons/accept.png</file>
         <file>icons/positionRobot.png</file>
+        <file>icons/pedestrian.png</file>
+        <file>icons/parking.png</file>
+        <file>icons/hazardsensors.png</file>
     </qresource>
 </RCC>

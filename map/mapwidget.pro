@@ -1,9 +1,10 @@
-QT += widgets qml quick
+QT += widgets qml quick quickcontrols2
 
 DESTDIR = bin
 
 TEMPLATE = lib
 QMAKE_LFLAGS+= -Wl,--no-undefined
+CONFIG += c++11
 #CONFIG += staticlib
 
 SOURCES += \
@@ -49,7 +50,15 @@ SOURCES += \
     RoboticsMap.cpp \
     ConfigurationLoader.cpp \
     MapIconPainter.cpp \
-    MapIcons.cpp
+    MapIcons.cpp \
+    DynamicObjectsLayer.cpp \
+    SensorReadings.cpp \
+    SensorDataLayer.cpp \
+    SensorLayerControlGui.cpp \
+    ISensorReadings.cpp \
+    Layers.cpp \
+    WaypointsLayer.cpp \
+    MapLayerInterface.cpp
 
 INSTALL_ROOT = /usr/local
 INCLUDEPATH += $${INSTALL_ROOT}/include/marble
@@ -70,11 +79,17 @@ INSTALL_HEADERS += \
     MapObject.h \
     RobotStates.h \
     PlacemarkType.h \
+    MapPlaces.h \
     GeoCoords.h \
     GeoMapSender.h \
     GeoLocalMapReceiver.h \
     LaserScanPoint.h \
-    Orientation.h
+    Orientation.h \
+    ISensorReadings.h \
+    UncertainCoords.h \
+    SensorInfo.h \
+    SensorData.h \
+    Mission.h
 
 LIBS += -lmarbledeclarative \
         -lmarblewidget-qt5
@@ -109,7 +124,6 @@ HEADERS += $${INSTALL_HEADERS} \
     ManualPositioningLogic.h \
     LocalMapLoader.h \
     RobotManualPlacementLayer.h \
-    MapLayersFwd.h \
     RegionsLayer.h \
     CrosshairLayer.h \
     PathsLayer.h \
@@ -118,9 +132,19 @@ HEADERS += $${INSTALL_HEADERS} \
     MapKeyboardInputHandler.h \
     RoboticsMap.h \
     ConfigurationLoader.h \
-    IconConfiguration.h \
     MapIconPainter.h \
-    MapIcons.h
+    MapIcons.h \
+    DynamicObjectsLayer.h \
+    DynamicObject.h \
+    IconConfiguration.h \
+    MapPlaces.h \
+    SensorReadings.h \
+    SensorDataLayer.h \
+    SensorLayerControlGui.h \
+    SensorDataColors.h \
+    Layers.h \
+    WaypointsLayer.h \
+    MapLayerInterface.h
 
 headers.files = $$INSTALL_HEADERS
 headers.path = $${INSTALL_ROOT}/include/map

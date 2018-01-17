@@ -6,9 +6,9 @@ namespace MapAbstraction
 {
     const int NoConnectedRobotID = -1;
 
-    GeoObjectsManager::GeoObjectsManager() : mConnectedRobotID(NoConnectedRobotID), mSelectedPlacemark(0)
+    GeoObjectsManager::GeoObjectsManager() : mConnectedRobotID(NoConnectedRobotID),
+        mSelectedPlacemark(0)
     {
-
     }
 
     bool GeoObjectsManager::hasPlacemark(const GeoObjectID &id) const
@@ -30,6 +30,19 @@ namespace MapAbstraction
         GeoObjectID empty;
         return empty;
     }
+
+    GeoObjectID GeoObjectsManager::findPlace(const QString &name) const
+    {   //Not optimized
+        foreach (PlacemarkPtr place, placemarks())
+        {
+            MapObjectPtr objPlace = getMapObjectForPlacemark(place);
+            if (objPlace && objPlace->category() == PlacemarkPlace && place->name() == name)
+                return findPlacemark(place);
+        }
+        GeoObjectID empty;
+        return empty;
+    }
+
 
     PlacemarkPtr GeoObjectsManager::getPlacemark(const GeoObjectID &id) const
     {
@@ -66,7 +79,7 @@ namespace MapAbstraction
             mRegisteredRobots.push_back(place);
     }
 
-    MapObjectPtr GeoObjectsManager::getMapObjectForPlacemark(PlacemarkConstPtr place)
+    MapObjectPtr GeoObjectsManager::getMapObjectForPlacemark(PlacemarkConstPtr place) const
     {
         Q_ASSERT(mPlacemarkDict.contains(place));
         return mPlacemarkDict.value(place).second;

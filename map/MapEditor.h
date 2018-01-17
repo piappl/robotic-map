@@ -26,9 +26,13 @@ signals:
     void selectionModeChanged(bool aSelectionMode);
     void placemarkSelected(int placemarkID);
     void finalizeMapEdit(bool accept);
+    void commandOrderPath();
+    void commandOrderParking();
 
 public slots:
     void finalizeEdit(bool accept);
+    void orderPath();
+    void orderParking();
     void setEditMode(const QString &mode);
     void addAtCenterSelected(bool orderBeforeSelected);
     void removeAtCenterSelected();

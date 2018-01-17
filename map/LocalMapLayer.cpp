@@ -13,6 +13,10 @@
 #include "LocalMapLogic.h"
 #include "MapRobotObject.h"
 #include "MapLibraryHelpers.h"
+#include "RoboticsMap.h"
+
+using namespace MapAbstraction;
+using namespace Marble;
 
 namespace
 {
@@ -23,222 +27,219 @@ namespace
     }
 }
 
-namespace Marble
+LocalMapLayer::LocalMapLayer(RoboticsMap *rm)
+    : MapLayerInterface(rm),
+      mLocalMapLogic(rm->model(), rm->map()),
+      mModel(rm->model()),
+      mMap(rm->map()),
+      mManualGeolocalization(false)
 {
-    LocalMapLayer::LocalMapLayer(MarbleModel *model, MarbleMap *map)
-        : mLocalMapLogic(new LocalMapLogic(model, map)),
-          mModel(model),
-          mMap(map),
-          mVisible(false),
-          mHasContent(false),
-          mManualGeolocalization(false)
-    {
-        mOverlay = new GeoDataGroundOverlay();
-        mMainLocalMapDocument.append(mOverlay);
-        mModel->treeModel()->addDocument(&mMainLocalMapDocument);
+    mOverlay = new GeoDataGroundOverlay();
+    mMainLocalMapDocument.append(mOverlay);
+    mModel->treeModel()->addDocument(&mMainLocalMapDocument);
 
-        connect(mLocalMapLogic.data(), SIGNAL(requiresUpdate()),
-                this, SLOT(reloadContent()));
-    }
+    QObject::connect(&mLocalMapLogic, SIGNAL(requiresUpdate()), this, SLOT(reloadContent()));
+}
 
-    LocalMapLayer::~LocalMapLayer()
-    {
-        mModel->treeModel()->removeDocument(&mMainLocalMapDocument);
-    }
+LocalMapLayer::~LocalMapLayer()
+{
+    mModel->treeModel()->removeDocument(&mMainLocalMapDocument);
+}
 
-    bool LocalMapLayer::isValidPerspective(const GeoDataLatLonBox &candidate) const
-    {
-        if (!mVisible || !mHasContent)
-        {   //any perspective is valid if no content is showing
-            return true;
-        }
-
-        GeoDataLatLonBox box = mLocalMapLogic->currentBox();
-        if (!candidate.contains(box) && !candidate.intersects(box))
-        {   //No relation - invalid perspective
-            return false;
-        }
-
-        //Acceptable scales
-        qreal d = diameter(box);
-        qreal zoomOutLimit = d * 4;
-        qreal zoomInLimit = d * 0.25;
-        qreal dCandidate = diameter(candidate);
-        if (dCandidate > zoomOutLimit || dCandidate < zoomInLimit)
-        {   //Box is too big or too small
-            return false;
-        }
-
+bool LocalMapLayer::isValidPerspective(const GeoDataLatLonBox &candidate) const
+{
+    if (!visible() || !mHasContent)
+    {   //any perspective is valid if no content is showing
         return true;
     }
 
-    void LocalMapLayer::setLayerContent(const QString &overlayFile, qreal resolution,
-                                        const GeoDataCoordinates &center, qreal rotation, QPointF origin)
-    {
-        QFileInfo info(overlayFile);
-        if (!info.exists() || !info.isFile() || !info.isReadable())
-        {
-            qWarning("LocalMapLayer received file path that does not match a readable file!");
-            return;
-        }
-
-        mLocalMapLogic->setOverlay(overlayFile, resolution, center, rotation, origin);
-        mHasContent = true;
-        reloadContent();
-        emit localMapHasContent();
-    }
-
-    void LocalMapLayer::reloadContent() const
-    {
-        if (mVisible)
-        {
-            mOverlay->setLatLonBox(mLocalMapLogic->currentBox());
-            mOverlay->setIcon(mLocalMapLogic->currentIcon());
-        }
-
-        mOverlay->setVisible(mVisible);
-        mModel->treeModel()->updateFeature(mOverlay);
-    }
-
-    QStringList LocalMapLayer::renderPosition() const
-    {
-        return QStringList() << "SURFACE";
-    }
-
-    qreal LocalMapLayer::zValue() const
-    {
-        return qreal(1); //Some arbitrary value > 0
-    }
-
-    bool LocalMapLayer::render(GeoPainter *painter, ViewportParams *viewport, const QString &, GeoSceneLayer *)
-    {
-        if (!mVisible | !mHasContent)
-            return true;
-
-        Q_UNUSED(viewport);
-
-        //Renders shapes useful for debugging
-        GeoDataLinearRing ring = mLocalMapLogic->imageArea();
-        painter->drawPolygon(ring);
-
-        if (mManualGeolocalization)
-        {
-            painter->setPen(Qt::red);
-            painter->drawPolygon(mLocalMapLogic->currentBoxBorder());
-        }
-
-        return true;
-    }
-
-    void LocalMapLayer::setVisible(bool visible)
-    {
-        mVisible = visible;
-        reloadContent();
-        emit localMapVisibilityChanged(visible);
-    }
-
-    bool LocalMapLayer::visible() const
-    {
-        return mVisible;
-    }
-
-    bool LocalMapLayer::hasContent() const
-    {
-        return mHasContent;
-    }
-
-    void LocalMapLayer::notifyState()
-    {
-        if (mHasContent)
-            emit localMapHasContent();
-        emit localMapVisibilityChanged(mVisible);
-    }
-
-    bool LocalMapLayer::handleEvent(QObject *, QEvent *e)
-    {
-        if (!mVisible || !mHasContent || !mManualGeolocalization)
-            return false;
-
-        if (e->type() == QEvent::MouseButtonPress
-            || e->type() == QEvent::MouseMove
-            || e->type() == QEvent::MouseButtonRelease)
-        {
-            QMouseEvent *event = static_cast<QMouseEvent*>(e);
-            qreal mouseLon, mouseLat;
-            bool isAboveMap = mMap->geoCoordinates(event->x(), event->y(),
-                                                   mouseLon, mouseLat, GeoDataCoordinates::Radian);
-            if (!isAboveMap)
-            {
-                return false;
-            }
-
-            return mLocalMapLogic->handleMouseEvent(event, mouseLon, mouseLat);
-        }
+    GeoDataLatLonBox box = mLocalMapLogic.currentBox();
+    if (!candidate.contains(box) && !candidate.intersects(box))
+    {   //No relation - invalid perspective
         return false;
     }
 
-    qreal LocalMapLayer::localToGlobalRotation(qreal localRotation) const
-    {
-        return mLocalMapLogic->geoLocalizeRotation(localRotation);
+    //Acceptable scales
+    qreal d = diameter(box);
+    qreal zoomOutLimit = d * 4;
+    qreal zoomInLimit = d * 0.25;
+    qreal dCandidate = diameter(candidate);
+    if (dCandidate > zoomOutLimit || dCandidate < zoomInLimit)
+    {   //Box is too big or too small
+        return false;
     }
 
-    GeoDataCoordinates LocalMapLayer::localToGlobal(const QPointF &localPoint) const
+    return true;
+}
+
+void LocalMapLayer::setLayerContent(const QString &overlayFile, qreal resolution,
+                                    const GeoDataCoordinates &center, qreal rotation, QPointF origin)
+{
+    QFileInfo info(overlayFile);
+    if (!info.exists() || !info.isFile() || !info.isReadable())
     {
-        return mLocalMapLogic->geoLocalizePoint(localPoint);
+        qWarning("LocalMapLayer received file path that does not match a readable file!");
+        return;
     }
 
-    GeoDataCoordinates LocalMapLayer::robotToGlobal(const QPointF &robotLocalPoint, MapAbstraction::MapRobotObjectConstPtr robotObject) const
+    mLocalMapLogic.setOverlay(overlayFile, resolution, center, rotation, origin);
+    mHasContent = true;
+    reloadContent();
+    qWarning("Has content \n");
+    emit localMapHasContent();
+    emit requestUpdate();
+    emit localMapVisibilityChanged(visible());
+}
+
+void LocalMapLayer::reloadContent() const
+{
+    if (visible())
     {
-        QPointF localCoords = mLocalMapLogic->robotToLocal(robotLocalPoint, robotObject);
-        //qDebug("local Coords %f %f", localCoords.x(), localCoords.y());
-        return mLocalMapLogic->geoLocalizePoint(localCoords);
+        mOverlay->setLatLonBox(mLocalMapLogic.currentBox());
+        mOverlay->setIcon(mLocalMapLogic.currentIcon());
     }
 
-    bool LocalMapLayer::globalToLocal(const GeoDataCoordinates &globalPoint,
-                                      QPointF &localPoint) const
+    mOverlay->setVisible(visible());
+    mModel->treeModel()->updateFeature(mOverlay);
+}
+
+QStringList LocalMapLayer::renderPosition() const
+{
+    return QStringList() << "SURFACE";
+}
+
+qreal LocalMapLayer::zValue() const
+{
+    return qreal(1); //Some arbitrary value > 0
+}
+
+bool LocalMapLayer::render(GeoPainter *painter, ViewportParams *viewport, const QString &, GeoSceneLayer *)
+{
+    if (!visible() | !mHasContent)
+        return true;
+
+    Q_UNUSED(viewport);
+
+    //Renders shapes useful for debugging
+    GeoDataLinearRing ring = mLocalMapLogic.imageArea();
+    painter->drawPolygon(ring);
+
+    if (mManualGeolocalization)
     {
-        return mLocalMapLogic->globalToLocal(globalPoint, localPoint);
+        painter->setPen(Qt::red);
+        painter->drawPolygon(mLocalMapLogic.currentBoxBorder());
     }
 
-    bool LocalMapLayer::globalToRobot(const GeoDataCoordinates &globalPoint,
-                                      MapAbstraction::MapRobotObjectPtr robot, QPointF &robotPoint) const
+    return true;
+}
+
+void LocalMapLayer::setVisible(bool visible)
+{
+    MapLayerInterface::setVisible(visible);
+    reloadContent();
+    qWarning("Vis change to %s\n", visible ? "YES" : "NO");
+    emit localMapVisibilityChanged(visible);
+}
+
+bool LocalMapLayer::hasContent() const
+{
+    return mHasContent;
+}
+
+void LocalMapLayer::notifyState()
+{
+    if (mHasContent)
+        emit localMapHasContent();
+    emit localMapVisibilityChanged(visible());
+}
+
+bool LocalMapLayer::handleEvent(QObject *, QEvent *e)
+{
+    if (!visible() || !mHasContent || !mManualGeolocalization)
+        return false;
+
+    if (e->type() == QEvent::TouchBegin
+        || e->type() == QEvent::TouchUpdate
+        || e->type() == QEvent::TouchEnd)
     {
-        QPointF localPoint;
-        bool inMap = mLocalMapLogic->globalToLocal(globalPoint, localPoint);
-        mLocalMapLogic->localToRobot(localPoint, robot, robotPoint);
-        return inMap;
+        QTouchEvent *event = static_cast<QTouchEvent*>(e);
+        if (event->touchPoints().isEmpty())
+            return false;
+        QTouchEvent::TouchPoint p = event->touchPoints().first();
+
+        //Single point supported only
+        qreal touchLon, touchLat;
+        bool aboveMap = mMap->geoCoordinates(p.pos().x(), p.pos().y(), touchLon, touchLat,
+                                             GeoDataCoordinates::Radian);
+        if (!aboveMap)
+            return false;
+        return mLocalMapLogic.handleTouchEvent(event, touchLon, touchLat);
     }
 
-    bool LocalMapLayer::hasReferenceFrame(GeoObjectID id) const
+    if (e->type() == QEvent::MouseButtonPress
+        || e->type() == QEvent::MouseMove
+        || e->type() == QEvent::MouseButtonRelease)
     {
-        return mRobotReferenceFrames.contains(id);
+        QMouseEvent *event = static_cast<QMouseEvent*>(e);
+        qreal mouseLon, mouseLat;
+        bool aboveMap = mMap->geoCoordinates(event->x(), event->y(), mouseLon, mouseLat,
+                                             GeoDataCoordinates::Radian);
+        if (!aboveMap)
+            return false;
+        return mLocalMapLogic.handleMouseEvent(event, mouseLon, mouseLat);
     }
+    return false;
+}
 
-    void LocalMapLayer::updateRefereceRobotFrame(GeoObjectID id, MapAbstraction::MapRobotObjectPtr robot)
-    {
-        MapAbstraction::MapObjectPtr frozen(robot->Clone());
-        QPointF local;
-        globalToLocal(MapLibraryHelpers::transformCoords(robot->coords()), local);
-        frozen->setCoords(MapAbstraction::GeoCoords(local.x(), local.y()));
-        mRobotReferenceFrames.insert(id, frozen.staticCast<MapAbstraction::MapRobotObject>());
-    }
+qreal LocalMapLayer::globalToLocalRotation(qreal globalRotation) const
+{
+    return mLocalMapLogic.globalToLocalRotation(globalRotation);
+}
 
-    MapAbstraction::MapRobotObjectPtr LocalMapLayer::getReferenceFrame(GeoObjectID id) const
-    {
-        Q_ASSERT(hasReferenceFrame(id));
-        MapAbstraction::MapObjectPtr defrosted(mRobotReferenceFrames.value(id)->Clone());
-        MapAbstraction::MapRobotObjectPtr robot = defrosted.staticCast<MapAbstraction::MapRobotObject>();
+GeoDataCoordinates LocalMapLayer::localToGlobal(const QPointF &localPoint) const
+{
+    return mLocalMapLogic.geoLocalizePoint(localPoint);
+}
 
-        QPointF local(robot->coords().longitude(), robot->coords().latitude());
-        robot->setCoords(MapLibraryHelpers::transformCoords(localToGlobal(local)));
+GeoDataCoordinates LocalMapLayer::robotToGlobal(const QPointF &robotLocalPoint, MapRobotObjectConstPtr robotObject) const
+{
+    return mLocalMapLogic.robotToGlobal(robotLocalPoint, robotObject);
+}
 
-        return robot;
-    }
+bool LocalMapLayer::globalToLocal(const GeoDataCoordinates &globalPoint,
+                                  QPointF &localPoint) const
+{
+    return mLocalMapLogic.globalToLocal(globalPoint, localPoint);
+}
 
-    void LocalMapLayer::toggleManualGeolocalization()
-    {
-        mManualGeolocalization = !mManualGeolocalization;
-    }
+bool LocalMapLayer::globalToRobot(const GeoDataCoordinates &globalPoint,
+                                  MapRobotObjectPtr robot, QPointF &robotPoint) const
+{
+    return mLocalMapLogic.globalToRobot(globalPoint, robot, robotPoint);
+}
 
+bool LocalMapLayer::localizeRobot(GeoObjectID id, MapRobotObjectPtr robot)
+{
+    if (!hasContent())
+        return false;
+
+    return mLocalMapLogic.localizeRobot(id, robot);
+}
+
+void LocalMapLayer::updateRefereceRobotFrame(GeoObjectID id, MapRobotObjectPtr robot)
+{
+    mLocalMapLogic.updateRefereceRobotFrame(id, robot);
+}
+
+void LocalMapLayer::toggleManualGeolocalization()
+{
+    mManualGeolocalization = !mManualGeolocalization;
+    requestUpdate();
+}
+
+void LocalMapLayer::calculateRelativePosition(GeoObjectID id, MapRobotObjectPtr oldRobot,
+                               MapRobotObjectPtr newRobot, QPointF &robotLocalPoint, qreal &orientation)
+{
+    mLocalMapLogic.calculateRelativePosition(id, oldRobot, newRobot, robotLocalPoint, orientation);
 }
 

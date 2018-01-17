@@ -1,22 +1,19 @@
-#ifndef MARBLECROSSHAIRLAYER_H
-#define MARBLECROSSHAIRLAYER_H
+#ifndef CROSSHAIRLAYER_H
+#define CROSSHAIRLAYER_H
 
-#include <marble/LayerInterface.h>
+#include "MapLayerInterface.h"
 
-namespace Marble
+namespace MapAbstraction
 {
-    class CrosshairLayer : public LayerInterface
+    class CrosshairLayer : public MapLayerInterface
     {
     public:
-        CrosshairLayer();
+        CrosshairLayer(RoboticsMap *rm);
+        LayerType type() const { return LayerCrosshair; }
         QStringList renderPosition() const;
-        bool render(GeoPainter *painter, ViewportParams *viewport, const QString &renderPos = "NONE", GeoSceneLayer *layer = 0);
-        void setVisibility(bool visible);
-        bool visible() const;
-
-    private:
-        bool mVisible;
+        bool render(Marble::GeoPainter *painter, Marble::ViewportParams *viewport, const QString &renderPos = "NONE",
+                    Marble::GeoSceneLayer *layer = 0);
     };
+    typedef QSharedPointer<CrosshairLayer> CrosshairLayerPtr;
 }
-
-#endif // MARBLECROSSHAIRLAYER_H
+#endif // CROSSHAIRLAYER_H

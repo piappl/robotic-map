@@ -198,6 +198,15 @@ RoboticsMap
             }
         }
 
+        /* Work in progress
+        SensorDataItem
+        {
+            id: sensorLayerGui
+            objectName: "sensorLayerGui"
+            anchors.top: buttonTogglePaths.bottom
+        }
+        */
+
         MapButton
         {
             id: buttonShowMapEdit

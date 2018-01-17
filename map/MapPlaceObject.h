@@ -13,6 +13,9 @@ namespace MapAbstraction
         PlacemarkType category() const;
     protected:
         bool compare(const MapObject &other) const;
+
+    private:
+        virtual QString displayText() const;
     };
 }
 

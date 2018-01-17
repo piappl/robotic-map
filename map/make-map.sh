@@ -45,7 +45,7 @@ fi
 
 echo "****Building marble"
 cd $marbleBuildDir
-cmake -DCMAKE_BUILD_TYPE=Debug -DQTONLY=1 -DCMAKE_INSTALL_PREFIX=$installPrefix -DCMAKE_PREFIX_PATH=$cmakePrefixPath -DBUILD_MARBLE_APPS=OFF -DBUILD_WITH_DBUS=0 -DQT_NO_DBUS=1 $marbleSource
+cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=$installPrefix -DCMAKE_PREFIX_PATH=$cmakePrefixPath -DBUILD_MARBLE_APPS=NO -DBUILD_MARBLE_TESTS=NO -DMARBLE_NO_WEBKITWIDGETS=YES -DWITH_DESIGNER_PLUGIN=NO -DBUILD_WITH_DBUS=NO $marbleSource
 make -j 8
 
 echo "****Installing marble"

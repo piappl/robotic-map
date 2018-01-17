@@ -1,39 +1,36 @@
 #ifndef ROBOTMANUALPLACEMENTLAYER_H
 #define ROBOTMANUALPLACEMENTLAYER_H
 
-#include <marble/LayerInterface.h>
+#include "MapLayerInterface.h"
 #include <marble/GeoDataCoordinates.h>
-#include "InternalTypesFwd.h"
 #include "GeoCoords.h"
+#include <marble/MarbleMap.h>
 
-namespace Marble
+namespace MapAbstraction
 {
-    class MarbleMap;
-    class RobotManualPlacementLayer : public QObject, public LayerInterface
+    class RobotManualPlacementLayer : public MapLayerInterface
     {
     Q_OBJECT
     signals:
         void orientationUpdate(MapAbstraction::GeoCoords newPoint);
 
     public:
-        RobotManualPlacementLayer(MarbleMap *map);
+        RobotManualPlacementLayer(RoboticsMap *rm);
         QStringList renderPosition() const;
-        bool render(GeoPainter *painter, ViewportParams *viewport,
-                    const QString &renderPos = "NONE", GeoSceneLayer *layer = 0);
-        void setVisibility(bool visible);
-        bool visible() const;
-
+        bool render(Marble::GeoPainter *painter, Marble::ViewportParams *viewport,
+                    const QString &renderPos = "NONE", Marble::GeoSceneLayer *layer = 0);
+        LayerType type() const { return LayerRobotManualPlacement; }
         bool handleEvent(QObject *o, QEvent *e);
-        void setReferencePoint(GeoDataCoordinates coords);
+        void setReferencePoint(Marble::GeoDataCoordinates coords);
 
     private:
-        bool mVisible;
-        MarbleMap *mMap;
+        Marble::MarbleMap *mMap;
 
-        bool mTracking;
-        GeoDataCoordinates mMouseCoords;
-        GeoDataCoordinates mReferenceCoords;
+        bool mTracking = false;
+        Marble::GeoDataCoordinates mMouseCoords;
+        Marble::GeoDataCoordinates mReferenceCoords;
     };
+    typedef QSharedPointer<RobotManualPlacementLayer> RobotManualPlacementLayerPtr;
 }
 
 

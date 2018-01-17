@@ -18,11 +18,53 @@ using namespace MapAbstraction;
 //TODO Selection logic should be separated, maybe use marble model (?)
 namespace
 {
-    const bool deleteWaypointOnReach = true;
+    const bool kDeleteWaypointOnReach = false;
+
+    bool isSelectableInMode(PlacemarkType currentEditMode)
+    {
+        if (currentEditMode != PlacemarkWaypoint && currentEditMode != PlacemarkPolygonNode
+            && currentEditMode != PlacemarkPlace)
+            return false;
+        return true;
+    }
+
+    //TODO - This should be in LocalMapLayer
+    void transformToRobotCoords(LocalMapLayerPtr localMap, MapRobotObjectPtr activeRobot, MapObjectPtr target)
+    {   //We need to translate command target to robot localization type
+        if (!activeRobot || !localMap->hasContent())
+            return;
+
+        if (activeRobot->localizationType() == MapObject::Global)
+            return; //No need to translate - global is default
+
+        QPointF localCoords;
+        if (activeRobot->localizationType() == MapObject::LocalAbsolute)
+        {
+           qDebug("Preparing coordinates in local absolute frame");
+           localMap->globalToLocal(MapLibraryHelpers::transformCoords(target->coords()),
+                                   localCoords);
+        }
+        else //Local Relative
+        {
+           qDebug("Preparing coordinates in local relative frame");
+           localMap->globalToRobot(MapLibraryHelpers::transformCoords(
+                                   target->coords()), activeRobot, localCoords);
+        }
+
+        target->setCoords(GeoCoords(localCoords.x(), localCoords.y()));
+        //qDebug("Waypoint coords [%f, %f]", localCoords.x(), localCoords.y());
+    }
+
+    Orientation oriFromPointALookAtB(const GeoCoords& a, const GeoCoords &b)
+    {
+        Orientation ori = atan2(-b.latitude() + a.latitude(),
+                                b.longitude() - a.longitude());
+        return ori;
+    }
 }
 
 MapPlacesManager::MapPlacesManager(PlacemarkLogicPtr logic, MapAbstraction::GeoObjectsManagerPtr geoManager,
-                                   Marble::LocalMapLayerPtr localMapLayer, Marble::MarbleMap *map)
+                                   LocalMapLayerPtr localMapLayer, Marble::MarbleMap *map)
     : mPlacemarkLogic(logic), mGeoManager(geoManager), mLocalMapLayer(localMapLayer), mMarbleMap(map),
       mCurrentEditMode(PlacemarkNone)
 {
@@ -30,11 +72,8 @@ MapPlacesManager::MapPlacesManager(PlacemarkLogicPtr logic, MapAbstraction::GeoO
 
 bool MapPlacesManager::leadingPlacemarkSelected() const
 {
-    if (mCurrentEditMode != PlacemarkWaypoint
-            && mCurrentEditMode != PlacemarkPolygonNode)
-    {
+    if (!isSelectableInMode(mCurrentEditMode))
         return false;
-    }
 
     PlacemarkConstPtr selectedOne = mGeoManager->selectedPlacemark();
     if (!selectedOne)
@@ -77,6 +116,28 @@ QVector<PlacemarkConstPtr> MapPlacesManager::placemarksAtPoint(int x, int y, boo
     return placemarks;
 }
 
+Orientation MapPlacesManager::newWaypointDefaultOrientation(GeoCoords coords) const
+{
+    GeoCoords previousCoords;
+    OrderedPoints points = mGeoManager->orderedPoints(PlacemarkWaypoint);
+    if (points.empty())
+    {
+        if (!mGeoManager->isAnyRobotConnected() || !mGeoManager->getConnectedRobot())
+            return 0;
+
+        MapRobotObjectPtr active = mGeoManager->getConnectedRobot();
+        previousCoords = active->coords();
+    }
+    else
+    {   //TODO check if this is right
+        MapObjectPtr lastWaypoint = mGeoManager->getMapObjectForPlacemark(points.last());
+        previousCoords = lastWaypoint->coords();
+    }
+    Orientation ori = oriFromPointALookAtB(previousCoords, coords);
+    qWarning("Orientation of new point is %f, coords ar %f %f", ori, coords.longitude(), coords.latitude());
+    return ori;
+}
+
 void MapPlacesManager::addAtCenter(bool orderBeforeSelected)
 {
     if (placemarksAtCenter(mMarbleMap).empty())
@@ -97,10 +158,11 @@ void MapPlacesManager::addAtCenter(bool orderBeforeSelected)
         qreal lon = mMarbleMap->centerLongitude();
         MapAbstraction::GeoCoords coords(lon, lat);
 
-        if (mCurrentEditMode == PlacemarkPlace)
-        {   //TODO - temporary solution to allow only one place (denoting operator)
+        if (currentEditMode() == PlacemarkPlace)
+        {   //TODO - this adds Console only, which is an unique place. No other places allowed
             removeAll();
         }
+
         MapObjectPtr place = makePlace(coords, mCurrentEditMode);
         GeoObjectID id = GeoReferenceFactory::createGeoObjectId();
         mPlacemarkLogic->addOrUpdatePlacemark(id, place);
@@ -126,52 +188,47 @@ void MapPlacesManager::removeAll()
     mPlacemarkLogic->removeAllPlacemarks(mCurrentEditMode);
 }
 
-void MapPlacesManager::finalizeMapEdit(bool accept)
+void MapPlacesManager::orderParking()
 {
-    if (accept)
-    {   //Send waypoints
-        MapRobotObjectPtr activeRobot = mGeoManager->getConnectedRobot();
+    if (!mGeoManager->isAnyRobotConnected() || !mGeoManager->getConnectedRobot())
+        return;
+    MapRobotObjectPtr activeRobot = mGeoManager->getConnectedRobot();
+    qWarning("Emit parking order");
+    emit skillTriggered(activeRobot->robotID(), QString("parking"));
+}
 
-        if (!activeRobot)
-            return;
+void MapPlacesManager::orderPath()
+{
+    MapRobotObjectPtr activeRobot = mGeoManager->getConnectedRobot();
 
-        MapPath path;
-        OrderedPoints currentPoints = mGeoManager->orderedPoints(PlacemarkWaypoint);
-        foreach(PlacemarkPtr placemark, currentPoints.values())
+    if (!activeRobot)
+        return;
+
+    MapPath path;
+    OrderedPoints currentPoints = mGeoManager->orderedPoints(PlacemarkWaypoint);
+    foreach(PlacemarkPtr placemark, currentPoints.values())
+    {
+        MapObjectPtr mapObject = mGeoManager->getMapObjectForPlacemark(placemark);
+        if (mapObject->category() == PlacemarkWaypoint)
         {
-            MapObjectPtr mapObject = mGeoManager->getMapObjectForPlacemark(placemark);
-            if (mapObject->category() == PlacemarkWaypoint)
-            {
-                MapObject *cloned = mapObject->Clone();
-                MapWaypointObjectPtr clonedWaypoint(dynamic_cast<MapWaypointObject*>(cloned));
-                if (mLocalMapLayer->hasContent())
-                {  //TODO - cut off nodes outside
-                   QPointF localCoords;
-                   /*bool inMap = */
-
-                   if (activeRobot->localizationType() == MapObject::LocalAbsolute)
-                   {
-                       mLocalMapLayer->globalToLocal(MapLibraryHelpers::transformCoords(clonedWaypoint->coords()), localCoords);
-                   }
-                   else //Local Relative
-                   {
-                       mLocalMapLayer->globalToRobot(MapLibraryHelpers::transformCoords(
-                                                     clonedWaypoint->coords()), activeRobot, localCoords);
-                   }
-
-                   clonedWaypoint->setCoords(GeoCoords(localCoords.x(), localCoords.y()));
-                   //qDebug("Waypoint coords [%f, %f]", localCoords.x(), localCoords.y());
-                }
-                path.append(clonedWaypoint);
-            }
-        }
-
-        if (path.size() > 0)
-        {
-            qDebug("path - waypoints are in robot frame of reference coords");
-            emit mapPathCreated(activeRobot->robotID(), path);
+            MapObject *cloned = mapObject->Clone();
+            MapWaypointObjectPtr clonedWaypoint(dynamic_cast<MapWaypointObject*>(cloned));
+            transformToRobotCoords(mLocalMapLayer, activeRobot, clonedWaypoint);
+            clonedWaypoint->setOrientation(mLocalMapLayer->globalToLocalRotation(-clonedWaypoint->orientation()));
+            path.append(clonedWaypoint);
         }
     }
+
+    if (path.size() > 0)
+    {
+        qWarning("Emit path");
+        emit mapPathCreated(activeRobot->robotID(), path);
+    }
+}
+
+void MapPlacesManager::finalizeMapEdit(bool accept)
+{
+    Q_UNUSED(accept); //Currently does nothing
 }
 
 PlacemarkType MapPlacesManager::placemarkCategory(PlacemarkConstPtr placemark) const
@@ -259,9 +316,10 @@ MapAbstraction::MapObjectPtr MapPlacesManager::makePlace(MapAbstraction::GeoCoor
     switch (type)
     {
         case PlacemarkPlace:
-            return MapPlaceObjectPtr(new MapPlaceObject(coords, QString("place"), QString("operator")));
+            return MapPlaceObjectPtr(new MapPlaceObject(coords, QString("console"), QString()));
         case PlacemarkWaypoint:
-            return MapWaypointObjectPtr(new MapWaypointObject(coords, firstFreeNum(PlacemarkWaypoint)));
+            return MapWaypointObjectPtr(new MapWaypointObject(coords, firstFreeNum(PlacemarkWaypoint),
+                                        newWaypointDefaultOrientation(coords)));
         case PlacemarkPolygonNode:
             return MapPolygonNodeObjectPtr(new MapPolygonNodeObject(coords, firstFreeNum(PlacemarkPolygonNode)));
         default:
@@ -293,7 +351,7 @@ void MapPlacesManager::activeRobotPositionChanged(GeoObjectID robotID)
         qreal distance = line.length(Marble::EARTH_RADIUS);
         if (distance <= reachedTreshold)
         {
-            if (deleteWaypointOnReach)
+            if (kDeleteWaypointOnReach)
             {
                 mPlacemarkLogic->removePlacemark(waypoint);
                 continue;
@@ -341,11 +399,28 @@ void MapPlacesManager::removeSelection()
 void MapPlacesManager::selectPlacemarkRequest(int x, int y)
 {
     QVector<PlacemarkConstPtr> placemarks = placemarksAtPoint(x, y);
-    removeSelection();
-
+    PlacemarkConstPtr oldSelected = mGeoManager->selectedPlacemark();
     if (placemarks.isEmpty())
-        return;
+    {
+        if (oldSelected)
+        {   //Check if this is waypoint, if so, change it's orientation.
+            MapObjectPtr o = mGeoManager->getMapObjectForPlacemark(oldSelected);
+            if (o && o->category() == PlacemarkWaypoint)
+            {
+                qreal lon, lat;
+                mMarbleMap->viewport()->geoCoordinates(x, y, lon, lat);
+                Orientation newOri = oriFromPointALookAtB(o->coords(), GeoCoords(lon, lat));
+                MapWaypointObjectPtr wo = o.staticCast<MapWaypointObject>();
+                wo->setOrientation(newOri);
+            }
+        }
+    }
 
+    removeSelection();
+    if (placemarks.isEmpty())
+    {
+        return;
+    }
     PlacemarkPtr place = const_cast<PlacemarkPtr>(placemarks.first());
     selectPlacemark(place);
 }
@@ -365,7 +440,7 @@ void MapPlacesManager::selectPlacemark(PlacemarkPtr place)
 
     removeSelection();
 
-    if (mCurrentEditMode != PlacemarkWaypoint && mCurrentEditMode != PlacemarkPolygonNode)
+    if (!isSelectableInMode(mCurrentEditMode))
         return;
 
     MapObjectPtr object = mGeoManager->getMapObjectForPlacemark(place);

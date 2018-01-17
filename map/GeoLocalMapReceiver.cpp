@@ -14,4 +14,9 @@ namespace MapAbstraction
         //qDebug("Received points %d", points.size());
         emit laserPointsCloudChanged(robotID, points);
     }
+
+    void GeoLocalMapReceiver::updateNamedPlaces(MapPlaces mapPlaces)
+    {
+        emit namedPlacesChanged(mapPlaces);
+    }
 }

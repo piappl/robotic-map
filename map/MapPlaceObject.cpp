@@ -22,4 +22,15 @@ namespace MapAbstraction
     {
         return true;
     }
+
+    QString MapPlaceObject::displayText() const
+    {
+        QString returned;
+
+        if (!type().isEmpty())
+            returned += type() + " ";
+
+        returned += name();
+        return returned;
+    }
 }

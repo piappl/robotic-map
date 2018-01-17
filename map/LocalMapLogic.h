@@ -6,13 +6,13 @@
 #include <QMouseEvent>
 #include <marble/GeoDataLatLonBox.h>
 #include <marble/GeoDataLinearRing.h>
+#include <marble/MarbleModel.h>
+#include <marble/MarbleMap.h>
 #include "MapObjectsFwd.h"
+#include "GeoObjectID.h"
 
-namespace Marble
+namespace MapAbstraction
 {
-    class MarbleModel;
-    class MarbleMap;
-
     class LocalMapLogic : public QObject
     {
     Q_OBJECT
@@ -20,31 +20,46 @@ namespace Marble
         void requiresUpdate();
 
     public:
-        LocalMapLogic(MarbleModel *model, MarbleMap *map);
+        LocalMapLogic(Marble::MarbleModel *model, Marble::MarbleMap *map);
         QImage currentIcon() const;
-        GeoDataLatLonBox currentBox() const;
-        void setOverlay(const QString &filePath, qreal resolution, const GeoDataCoordinates &center,
+        Marble::GeoDataLatLonBox currentBox() const;
+        void setOverlay(const QString &filePath, qreal resolution, const Marble::GeoDataCoordinates &center,
                         qreal rotation, QPointF origin);
-        GeoDataLinearRing imageArea() const;
-        GeoDataLinearRing currentBoxBorder() const;
+        Marble::GeoDataLinearRing imageArea() const;
+        Marble::GeoDataLinearRing currentBoxBorder() const;
         bool handleMouseEvent(QMouseEvent *event, qreal mouseLon, qreal mouseLat);
-        GeoDataCoordinates geoLocalizePoint(const QPointF &point) const;
+        bool handleTouchEvent(QTouchEvent *event, qreal touchLon, qreal touchLat);
+        Marble::GeoDataCoordinates geoLocalizePoint(const QPointF &point) const;
+        Marble::GeoDataCoordinates robotToGlobal(const QPointF &robotLocalPoint,
+                                                 MapAbstraction::MapRobotObjectConstPtr robotObject) const
+        ;
         QPointF robotToLocal(const QPointF &point, MapAbstraction::MapRobotObjectConstPtr robot) const;
         qreal geoLocalizeRotation(qreal rotation) const;
-        bool globalToLocal(const GeoDataCoordinates &coords, QPointF &outPoint) const;
+        qreal globalToLocalRotation(qreal rotation) const;
+        bool globalToLocal(const Marble::GeoDataCoordinates &coords, QPointF &outPoint) const;
+        bool globalToRobot(const Marble::GeoDataCoordinates &globalPoint, MapRobotObjectPtr robot,
+                           QPointF &robotPoint) const;
         void localToRobot(const QPointF &point, MapAbstraction::MapRobotObjectConstPtr robot,
                           QPointF &robotPoint) const;
+        bool localizeRobot(GeoObjectID id, MapAbstraction::MapRobotObjectPtr robot);
+        void calculateRelativePosition(GeoObjectID id, MapAbstraction::MapRobotObjectPtr oldRobot,
+                                       MapAbstraction::MapRobotObjectPtr newRobot, QPointF &robotLocalPoint,
+                                       qreal &orientation);
+        bool hasReferenceFrame(GeoObjectID id) const;
+        void updateRefereceRobotFrame(GeoObjectID id, MapAbstraction::MapRobotObjectPtr robot);
+        MapAbstraction::MapRobotObjectPtr getReferenceFrame(GeoObjectID id) const;
 
     private:
-        QSizeF localMapGeoScale(const GeoDataCoordinates &center, bool original = false) const;
-        GeoDataLatLonBox fabricateBox(const GeoDataCoordinates &center) const;
+        bool handleMouse(QPointF geoPos, QPointF pos, QEvent::Type type, Qt::MouseButton button);
+        QSizeF localMapGeoScale(const Marble::GeoDataCoordinates &center, bool original = false) const;
+        Marble::GeoDataLatLonBox fabricateBox(const Marble::GeoDataCoordinates &center) const;
         QSizeF localMapScale() const;
         QSizeF originalMapScale() const;
         void restoreImageQuality();
         void reduceImageQuality();
 
-        MarbleModel *mModel;
-        MarbleMap *mMap;
+        Marble::MarbleModel *mModel;
+        Marble::MarbleMap *mMap;
 
         //Untransformed icon - loaded from file and converted to ARGB
         QImage mOriginalIcon;
@@ -54,16 +69,18 @@ namespace Marble
         QImage mIcon;
 
         //A box that is suitable for pre-transform icon
-        GeoDataLatLonBox mOriginalBox;
+        Marble::GeoDataLatLonBox mOriginalBox;
         //A box that encompasses the icon
-        GeoDataLatLonBox mBox;
+        Marble::GeoDataLatLonBox mBox;
 
         QPointF mOrigin;
         qreal mRotation;
         qreal mMapResolution;
         qreal mCurrentScaleFactor;
-    };
 
+        typedef QMap<GeoObjectID, MapAbstraction::MapRobotObjectPtr> RobotReferenceFrames;
+        RobotReferenceFrames mRobotReferenceFrames;
+    };
 }
 
 #endif // LOCALMAPLOGIC_H

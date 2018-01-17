@@ -30,12 +30,14 @@ namespace MapAbstraction
         PlacemarkPtr getPlacemark(const GeoObjectID &id) const;
         void removePlacemark(const GeoObjectID &id);
         GeoObjectID findPlacemark(PlacemarkConstPtr place) const;
+        GeoObjectID findPlace(const QString &name) const;
+
         PlacemarkVector registeredRobots() const;
         OrderedPoints orderedPoints(PlacemarkType type) const;
 
         void addMapObject(const GeoObjectID &id, PlacemarkPtr place, MapObjectPtr object);
         void updateMapObject(PlacemarkPtr place, MapObjectPtr object);
-        MapObjectPtr getMapObjectForPlacemark(PlacemarkConstPtr place);
+        MapObjectPtr getMapObjectForPlacemark(PlacemarkConstPtr place) const;
         MapObjectPtr getMapObjectForID(const GeoObjectID &id);
 
         MapRobotObjectPtr getConnectedRobot(GeoObjectID &id) const;

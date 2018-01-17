@@ -4,6 +4,7 @@
 #include <QItemSelectionModel>
 #include <QGestureEvent>
 #include <QPinchGesture>
+#include <QFileInfo>
 
 #include <marble/MarbleMap.h>
 #include <marble/MarbleModel.h>
@@ -11,6 +12,10 @@
 #include <marble/MarbleGlobal.h>
 #include <marble/MarbleInputHandler.h>
 #include <marble/GeoDataTreeModel.h>
+#include <marble/GeoDataDocument.h>
+#include <marble/GeoDataObject.h>
+#include <marble/GeoDataFeature.h>
+#include <marble/MarbleDebug.h>
 
 #include "PathsLayer.h"
 #include "RegionsLayer.h"
@@ -18,6 +23,8 @@
 #include "LocalMapLayer.h"
 #include "LaserCloudLayer.h"
 #include "RobotManualPlacementLayer.h"
+#include "DynamicObjectsLayer.h"
+#include "SensorDataLayer.h"
 
 #include "RoboticsMap.h"
 #include "GuiController.h"
@@ -58,14 +65,17 @@ void RoboticsMap::configure()
     map()->setShowSunShading(false);
     map()->setShowGrid(false);
     map()->setShowOtherPlaces(false);
+    map()->setShowPlaces(false);
+    map()->setShowCities(false);
     map()->setShowScaleBar(false);
     map()->setVolatileTileCacheLimit(300000); //300Mb memory cache
     model()->setWorkOffline(false); //TODO
 
-    //model()->setPersistentTileCacheLimit(); Sets disk space limit
-    model()->setHome(20.91, 52.19, 2800);
+    model()->setHome(25.9722672,44.4349764, 2500);
     goHome();
-    mScaling=true;
+    model()->setHome(20.91, 52.19, 2800);
+
+    update();
 }
 
 void RoboticsMap::updateLicense()
@@ -122,16 +132,22 @@ void RoboticsMap::connectSignals()
     connect(mLocalMapReceiver.data(), SIGNAL(laserPointsCloudChanged(int, MapAbstraction::LaserScanPoints)),
             this, SLOT(updateLaserPointsCloud(int, MapAbstraction::LaserScanPoints)));
 
+    qRegisterMetaType<MapPlaces>("MapPlaces");
+    connect(mLocalMapReceiver.data(), SIGNAL(namedPlacesChanged(MapAbstraction::MapPlaces)),
+            this, SLOT(updateMapPlaces(MapAbstraction::MapPlaces)));
+
     connect(mManualPositioningLogic.data(), SIGNAL(robotPlacementComplete(GeoObjectID,MapAbstraction::MapRobotObjectPtr)),
             this, SLOT(manualOverrideOfRobotLocation(GeoObjectID,MapAbstraction::MapRobotObjectPtr)));
 
-    connect(mLocalMapLayer.data(), SIGNAL(localMapHasContent()),
-            this, SIGNAL(localMapHasContent()));
-
-    connect(mLocalMapLayer.data(), SIGNAL(localMapVisibilityChanged(bool)),
-            this, SIGNAL(localMapVisibilityChanged(bool)));
-
-    mLocalMapLayer->notifyState();
+    if (mLayers.hasLayer(LayerLocalMap))
+    {
+        LocalMapLayerPtr localMap = mLayers.getLayer(LayerLocalMap).staticCast<LocalMapLayer>();
+        connect(localMap.data(), SIGNAL(localMapHasContent()),
+                this, SIGNAL(localMapHasContent()));
+        connect(localMap.data(), SIGNAL(localMapVisibilityChanged(bool)),
+                this, SIGNAL(localMapVisibilityChanged(bool)));
+        localMap->notifyState();
+    }
 
     GuiController *guiController = findChild<GuiController*>("guiController");
     Q_ASSERT(guiController);
@@ -171,6 +187,10 @@ void RoboticsMap::connectSignals()
                 mMapPlacesManager.data(), SLOT(selectPlacemark(int)));
         connect(mapEditor, SIGNAL(finalizeMapEdit(bool)),
                 mMapPlacesManager.data(), SLOT(finalizeMapEdit(bool)));
+        connect(mapEditor, SIGNAL(commandOrderParking()),
+                mMapPlacesManager.data(), SLOT(orderParking()));
+        connect(mapEditor, SIGNAL(commandOrderPath()),
+                mMapPlacesManager.data(), SLOT(orderPath()));
         connect(mMapPlacesManager.data(), SIGNAL(selectionModeChanged(bool)),
                 mapEditor, SIGNAL(selectionModeChanged(bool)));
     }
@@ -179,6 +199,10 @@ void RoboticsMap::connectSignals()
     qRegisterMetaType<MapAbstraction::MapPath>("MapAbstraction::MapPath");
     connect(mMapPlacesManager.data(), SIGNAL(mapPathCreated(int,MapAbstraction::MapPath)),
             mSender.data(), SIGNAL(mapPathCreated(int,MapAbstraction::MapPath)));
+
+    qRegisterMetaType<MapWaypointObjectPtr>("MapObjectPtr");
+    connect(mMapPlacesManager.data(), SIGNAL(skillTriggered(int, QString)),
+            mSender.data(), SIGNAL(skillTriggered(int, QString)));
 
     RobotEditor *robotEditor = findChild<RobotEditor*>("robotEditor");
     Q_ASSERT(robotEditor);
@@ -217,34 +241,26 @@ void RoboticsMap::center(int placemarkID)
     }
 }
 
+MapLogPlacemarkDataPtr RoboticsMap::mapLog()
+{
+    return mPlacemarkLogic->mapLog();
+}
+
 RoboticsMap::RoboticsMap(QQuickItem *parent) : MarbleQuickItem(parent),
     mGeoObjectsManager(new GeoObjectsManager()),
     mInputHandler(new MapKeyboardInputHandler(mGeoObjectsManager)),
     mPlacemarkLogic(new PlacemarkLogic(model(), mGeoObjectsManager)),
     mTrackingCamera(new TrackingCamera()),
-    mPathsLayer(new PathsLayer(mPlacemarkLogic->mapLog(), mGeoObjectsManager)),
-    mRegionsLayer(new RegionsLayer(mGeoObjectsManager)),
-    mCrosshairLayer(new CrosshairLayer()),
-    mLocalMapLayer(new LocalMapLayer(model(), map())),
-    mLaserCloudLayer(new LaserCloudLayer(mLocalMapLayer)),
-    mRobotPlacementLayer(new RobotManualPlacementLayer(map())),
-    mPathsVisible(false),
-    mScaling(true),
+    mLayers(this),
     mTextureManager(new TextureManager(map())),
-    mMapPlacesManager(new MapPlacesManager(mPlacemarkLogic, mGeoObjectsManager, mLocalMapLayer, map())),
+    mMapPlacesManager(new MapPlacesManager(mPlacemarkLogic, mGeoObjectsManager, mLayers.getLayer(LayerLocalMap).staticCast<LocalMapLayer>(), map())),
     mSender(new GeoMapSender()),
     mLocalMapReceiver(new GeoLocalMapReceiver()),
     mLocalMapLoader(new LocalMapLoader(this)),
-    mManualPositioningLogic(new ManualPositioningLogic(mPlacemarkLogic, mGeoObjectsManager, map(), mRobotPlacementLayer))
+    mManualPositioningLogic(new ManualPositioningLogic(mPlacemarkLogic, mGeoObjectsManager, map(),
+                                                       mLayers.getLayer(LayerRobotManualPlacement).staticCast<RobotManualPlacementLayer>())),
+    mSensorReadings(new SensorReadings(mLayers.getLayer(LayerSensorData).staticCast<SensorDataLayer>()))
 {  
-    map()->addLayer(mCrosshairLayer.data());
-    map()->addLayer(mPathsLayer.data());
-    map()->addLayer(mRegionsLayer.data());
-    map()->addLayer(mLocalMapLayer.data());
-    map()->addLayer(mLaserCloudLayer.data());
-    map()->addLayer(mRobotPlacementLayer.data());
-    mPathsLayer->setRobotPathsVisibility(mPathsVisible);
-
     installEventFilter(mInputHandler.data()); //add our specific filter on top
     configure();
 }
@@ -257,6 +273,11 @@ GeoMapSenderPtr RoboticsMap::sender() const
 GeoLocalMapReceiverPtr RoboticsMap::localMapReceiver() const
 {
     return mLocalMapReceiver;
+}
+
+ISensorReadingsPtr RoboticsMap::sensorReadingsInterface() const
+{
+    return mSensorReadings;
 }
 
 void RoboticsMap::processRobotConnectionStatus(MapRobotObjectPtr newObject)
@@ -285,77 +306,59 @@ bool RoboticsMap::processRobotLocalizationStatus(GeoObjectID id, MapRobotObjectP
     if (robotObjectData->localizationType() != MapObject::Global
             && robotObjectData->positionAvailable())
     {   //Has position but not global: compute from local map
-
-        if (!mLocalMapLayer->hasContent())
-            return false; //We can't do anything with such a robot - we don't have local map!
-
-        GeoDataCoordinates newCoords;
-        if (robotObjectData->localizationType() == MapObject::LocalAbsolute)
-        {
-            newCoords = mLocalMapLayer->localToGlobal(
-                        QPointF(robotObjectData->coords().longitude(),
-                                robotObjectData->coords().latitude()));
-            robotObjectData->setOrientation(mLocalMapLayer->localToGlobalRotation(
-                                              robotObjectData->orientation()));
-            robotObjectData->setCoords(MapLibraryHelpers::transformCoords(newCoords));
-        }
-        else if (robotObjectData->localizationType() == MapObject::LocalRelative)
-        {
-            //qDebug("Incoming coords: %f, %f", robotObjectData->coords().latitude(), robotObjectData->coords().longitude());
-            MapRobotObjectPtr referenceRobot;
-            if (mLocalMapLayer->hasReferenceFrame(id))
-            {
-                referenceRobot = mLocalMapLayer->getReferenceFrame(id);
-            }
-            else
-            {   //TODO - we are using the robot object as data object here. It's not too good
-                GeoDataCoordinates localZeroInGlobal = mLocalMapLayer->localToGlobal(QPointF(0,0));
-                QString e;
-                referenceRobot.reset(new MapRobotObject(MapLibraryHelpers::transformCoords(localZeroInGlobal),
-                                                        0, RobotStateNormal, e, e, e, 0, 0));
-            }
-
-
-            newCoords = mLocalMapLayer->robotToGlobal(
-                        QPointF(robotObjectData->coords().longitude(),
-                        robotObjectData->coords().latitude()), referenceRobot);
-
-            //qDebug("Coords old: |%f,%f,%f|", robotObjectData->coords().longitude(), robotObjectData->coords().latitude(), robotObjectData->orientation());
-
-            //qDebug("orientations: %f, %f, sum %f", robotObjectData->orientation(), referenceRobot->orientation(),
-            //       robotObjectData->orientation() + referenceRobot->orientation());
-            robotObjectData->setOrientation(mLocalMapLayer->localToGlobalRotation(
-                                              robotObjectData->orientation()));
-            robotObjectData->setOrientation(robotObjectData->orientation() + referenceRobot->orientation()); //TODO
-        }
-
-        robotObjectData->setCoords(MapLibraryHelpers::transformCoords(newCoords));
-        robotObjectData->setLocalizationType(MapObject::Global);
+        mLayers.getLayer(LayerLocalMap).staticCast<LocalMapLayer>()->localizeRobot(id, robotObjectData);
     }
     return true;
 }
 
-void RoboticsMap::updatePlacemark(GeoObjectID id, MapRobotObjectPtr robotObjectData)
+void RoboticsMap::updatePlacemark(GeoObjectID id, MapObjectPtr objectData)
 {
-    processRobotConnectionStatus(robotObjectData);
-    bool proceed = processRobotLocalizationStatus(id, robotObjectData);
-    if (!proceed)
+    if (PlacemarkRobot == objectData->category())
     {
+        MapRobotObjectPtr robotObjectData = objectData.staticCast<MapRobotObject>();
+        processRobotConnectionStatus(robotObjectData);
+        bool proceed = processRobotLocalizationStatus(id, robotObjectData);
+        if (!proceed)
+        {
+            return;
+        }
+
+        if (mManualPositioningLogic->isInManualPlacementMode(id))
+        {   //The robot is being manualy positioned on the map so don't interfere
+            MapRobotObjectPtr manualOverride = mManualPositioningLogic->positionedRobot();
+            robotObjectData->setCoords(manualOverride->coords());
+            robotObjectData->setOrientation(manualOverride->orientation());
+            return;  //TODO - alternatively, we might ditch only position and orientation components
+        }
+
+        broadcastRelativePosition(robotObjectData);
+    }
+
+    mPlacemarkLogic->addOrUpdatePlacemark(id, objectData);
+}
+
+void RoboticsMap::updateFileGeometry(const QString &fileSource)
+{
+    QFileInfo inputFile(fileSource);
+    if (!inputFile.isFile())
+    {
+        qWarning("updateFileGeometry error: invalid filename provided (%s)", qPrintable(fileSource));
         return;
     }
+    model()->addGeoDataFile(inputFile.absoluteFilePath());
+}
 
-    if (mManualPositioningLogic->isInManualPlacementMode(id))
-    {   //The robot is being manualy positioned on the map so don't interfere
-        MapRobotObjectPtr manualOverride = mManualPositioningLogic->positionedRobot();
-        robotObjectData->setCoords(manualOverride->coords());
-        robotObjectData->setOrientation(manualOverride->orientation());
-        return;  //TODO - alternatively, we might ditch only position and orientation components
-    }
+void RoboticsMap::removeGeometry(const QString &keyName)
+{
+    model()->removeGeoData(keyName);
+}
 
+void RoboticsMap::broadcastRelativePosition(MapRobotObjectPtr robotObjectData)
+{
     foreach (PlacemarkPtr place, mGeoObjectsManager->placemarks())
     {   //TODO - this is temporary and will be replaced (function: find operator placement if available)
         MapObjectPtr mapObject = mGeoObjectsManager->getMapObjectForPlacemark(place);
-        if (PlacemarkPlace == mapObject->category())
+        if (PlacemarkPlace == mapObject->category() && "console" == mapObject->type()) //TODO-const
         {   //There is an operator placed, find relative robot location. Robot is already in global coords;
             GeoDataCoordinates robotCoords = MapLibraryHelpers::transformCoords(robotObjectData->coords());
             GeoDataCoordinates placeCoords = MapLibraryHelpers::transformCoords(mapObject->coords());
@@ -363,21 +366,22 @@ void RoboticsMap::updatePlacemark(GeoObjectID id, MapRobotObjectPtr robotObjectD
             qreal metersInRadianOfLongitude = model()->planetRadius();
             qreal metersInRadianOfLatitude = cos(placeCoords.latitude()) * model()->planetRadius();
 
-            qreal y = (placeCoords.latitude() - robotCoords.latitude()) * metersInRadianOfLatitude;
-            qreal x = (placeCoords.longitude() - robotCoords.longitude()) * metersInRadianOfLongitude;
+            qreal y = placeCoords.latitude() * metersInRadianOfLongitude - robotCoords.latitude() * metersInRadianOfLongitude;
+            qreal x = placeCoords.longitude() * metersInRadianOfLatitude - robotCoords.longitude() * metersInRadianOfLatitude;
 
             GeoCoords metersXYCoords(x, y);
+            GeoCoords radiansGlobalCoords(placeCoords.longitude(), placeCoords.latitude());
 
-            if (robotObjectData->connected())
-            {   //TODO - no need to send only for connected. Send for all.
-                qDebug("Position Available %lf %lf", x, y);
-                sender()->robotPositionRelativeToOperator(robotObjectData->robotID(), metersXYCoords);
-            }
+            /*
+            qDebug("Relative (to operator) robot position Available %f %f, in radians: %.8lf %.8lf",
+                   x, y, placeCoords.longitude() - robotCoords.longitude(),
+                   placeCoords.latitude() - robotCoords.latitude());
+            */
+            sender()->robotPositionRelativeToOperator(robotObjectData->robotID(), metersXYCoords,
+                                                      radiansGlobalCoords);
             break;
         }
     }
-
-    mPlacemarkLogic->addOrUpdatePlacemark(id, robotObjectData);
 }
 
 void RoboticsMap::connectedToRobot(int robotID, bool connection)
@@ -414,7 +418,7 @@ void RoboticsMap::makePinch(QPointF center, Qt::GestureState state, qreal scale)
 void RoboticsMap::geometryChanged(const QRectF &newGeometry, const QRectF &oldGeometry)
 {
     QQuickItem::geometryChanged(newGeometry, oldGeometry);
-    if(mScaling && oldGeometry.width() != 0 && newGeometry.width() != 0)
+    if(oldGeometry.width() != 0 && newGeometry.width() != 0)
         setZoom(getScaledZoomByParam(zoom(), oldGeometry.width(), newGeometry.width()));
 }
 
@@ -440,9 +444,40 @@ void RoboticsMap::handlePinchEnd(QPointF center, bool canceled)
 
 void RoboticsMap::toggleVisibility()
 {
+    /*
+    QVector<GeoDataFeature*> fl = model()->treeModel()->rootDocument()->featureList();
+    for (GeoDataFeature *f : fl)
+    {
+        if (f->name() == "bucharest.kml")
+        {
+            qDebug() << "-" << f->name() << "-";
+            f->setVisible(!f->isVisible());
+            GeoDataDocument *d = geodata_cast<GeoDataDocument>(f);
+            if (d)
+            {
+                for (auto ff : d->featureList())
+                {
+                    qDebug() << ":" << ff->name() << ":";
+                    if (ff->name() == "path")
+                    {
+                        GeoDataPlacemark *p = geodata_cast<GeoDataPlacemark>(ff);
+                        p->setVisible(!p->isVisible());
+                        qDebug() << "::" << p->visualCategory();
+                        qDebug() << ":::"  << p->categoryName();
+                        GeoDataLinearRing *r = static_cast<GeoDataLinearRing *>(p->geometry());
+                        qDebug() << "::::" << r->length(model()->planetRadius());
+                        if (p->isGloballyVisible())
+                            qDebug() << "Globally visible!";
+                        update();
+                    }
+                }
+            }
+        }
+    }
+    */
+
     mPlacemarkLogic->togglePlacemarksVisibility();
-    mPathsLayer->setRobotPathsVisibility(mPathsVisible && mPlacemarkLogic->placemarksVisible());
-    mPathsLayer->setWaypointPathsVisibility(mPlacemarkLogic->placemarksVisible());
+    mLayers.getLayer(LayerPaths)->setVisible(mPathsVisible && mPlacemarkLogic->placemarksVisible());
 }
 
 void RoboticsMap::toggleLayer()
@@ -453,7 +488,7 @@ void RoboticsMap::toggleLayer()
 void RoboticsMap::togglePaths()
 {
     mPathsVisible = !mPathsVisible;
-    mPathsLayer->setRobotPathsVisibility(mPathsVisible && mPlacemarkLogic->placemarksVisible());
+    mLayers.getLayer(LayerPaths)->setVisible(mPathsVisible && mPlacemarkLogic->placemarksVisible());
 }
 
 void RoboticsMap::manualOverrideOfRobotLocation(GeoObjectID id, MapRobotObjectPtr oldRobot)
@@ -461,11 +496,11 @@ void RoboticsMap::manualOverrideOfRobotLocation(GeoObjectID id, MapRobotObjectPt
     MapRobotObjectPtr newRobot = mGeoObjectsManager->getMapObjectForID(id).staticCast<MapRobotObject>();
 
     QPointF robotLocalPoint;
-    mLocalMapLayer->globalToRobot(MapLibraryHelpers::transformCoords(newRobot->coords()),
-                                  oldRobot, robotLocalPoint);
+    qreal orientation;
+    mLayers.getLayer(LayerLocalMap).staticCast<LocalMapLayer>()->calculateRelativePosition(id, oldRobot, newRobot,
+                                                                                           robotLocalPoint, orientation);
     GeoCoords coords(robotLocalPoint.x(), robotLocalPoint.y());
-    mLocalMapLayer->updateRefereceRobotFrame(id, newRobot);
-    mSender->robotPositioned(newRobot->robotID(), coords, newRobot->orientation());
+    mSender->robotPositioned(newRobot->robotID(), coords, orientation);
 }
 
 void RoboticsMap::overviewPlacemarks()
@@ -526,7 +561,7 @@ void RoboticsMap::center(const GeoDataLatLonBox &box)
 
 void RoboticsMap::displayCrosshair(bool display)
 {
-    mCrosshairLayer->setVisibility(display);
+    mLayers.setVisibility(LayerCrosshair, display);
     update();
 }
 
@@ -553,43 +588,96 @@ void RoboticsMap::updateLocalMap(QString localMapPng, qreal resolution,
            resolution, coords.longitude(), coords.latitude(), rotation, origin.x(), origin.y());
     */
 
-    mLocalMapLayer->setLayerContent(localMapPng, resolution, marbleCoords, rotation, origin);
-    mLocalMapLayer->setVisible(true);
-    mLaserCloudLayer->setVisible(true);
+    mLayers.setVisibility(LayerLaserCloud, true);
+    mLayers.setVisibility(LayerLocalMap, true);
+    mLayers.getLayer(LayerLocalMap).staticCast<LocalMapLayer>()->setLayerContent(localMapPng, resolution, marbleCoords, rotation, origin);
+}
+
+void RoboticsMap::updateRequested()
+{
     update();
 }
 
 void RoboticsMap::updateLaserPointsCloud(int robotID, LaserScanPoints points)
 {
+    if (!mLayers.hasLayer(LayerLaserCloud))
+        return;
+
     MapRobotObjectPtr localRobot = mGeoObjectsManager->getConnectedRobot();
-    if (mLocalMapLayer->visible() && localRobot && (robotID == localRobot->robotID()))
+    if (localRobot && (robotID == localRobot->robotID()))
     {
         //qDebug("Received laser cloud");
-        mLaserCloudLayer->setVisible(mLocalMapLayer->visible());
-        mLaserCloudLayer->updateContent(points, localRobot);
-        update();
+        LaserCloudLayerPtr lcl = mLayers.getLayer(LayerLaserCloud).staticCast<LaserCloudLayer>();
+        lcl->updateContent(points, localRobot);
+    }
+}
+
+void RoboticsMap::updateDynamicObjects(int robotID, DynamicObjects objects)
+{
+    MapRobotObjectPtr connectedRobot = mGeoObjectsManager->getConnectedRobot();
+
+    if (!connectedRobot)
+    {
+        mLayers.setVisibility(LayerDynamicObjects, false);
+        return;
+    }
+
+    if (connectedRobot && connectedRobot->robotID() == robotID)
+    {
+        mLayers.getLayer(LayerDynamicObjects).staticCast<DynamicObjectsLayer>()->updateContent(objects, connectedRobot);
+        mLayers.setVisibility(LayerDynamicObjects, true);
+    }
+}
+
+void RoboticsMap::updateMapPlaces(MapPlaces places)
+{
+    //TODO - for now, ignore this call
+    return;
+
+    foreach (MapPlaceObjectConstPtr place, places)
+    {
+        GeoObjectID id = mGeoObjectsManager->findPlace(place->name());
+        if (id.isNull())
+        {
+            id = GeoReferenceFactory::createGeoObjectId();
+        }
+
+        MapObjectPtr clonedPlace(place->Clone());
+        qWarning("PRE-Changes: %f %f %s", clonedPlace->coords().longitude(),
+                 clonedPlace->coords().latitude(), qPrintable(clonedPlace->name()));
+        if (clonedPlace->localizationType() != MapObject::Global)
+        {
+            QPointF coords(clonedPlace->coords().longitude(), clonedPlace->coords().latitude());
+            LocalMapLayerPtr lml = mLayers.getLayer(LayerLocalMap).staticCast<LocalMapLayer>();
+            GeoCoords transformed = MapLibraryHelpers::transformCoords(lml->localToGlobal(coords));
+            clonedPlace->setCoords(transformed);
+        }
+        qWarning("POST-Changes: %f %f %s", clonedPlace->coords().longitude(),
+                 clonedPlace->coords().latitude(), qPrintable(clonedPlace->name()));
+
+        mPlacemarkLogic->addOrUpdatePlacemark(id, clonedPlace);
     }
 }
 
 bool RoboticsMap::layersEventFilter(QObject *o, QEvent *e)
 {
-    bool handled = mRobotPlacementLayer->handleEvent(o, e);
-    if (handled)
-    {
+    RobotManualPlacementLayerPtr rmpl = mLayers.getLayer(LayerRobotManualPlacement).staticCast<RobotManualPlacementLayer>();
+    if (rmpl->handleEvent(o, e))
         return true;
-    }
-    return mLocalMapLayer->handleEvent(o, e);
+
+    LocalMapLayerPtr lml = mLayers.getLayer(LayerLocalMap).staticCast<LocalMapLayer>();
+    return lml->handleEvent(o, e);
 }
 
 void RoboticsMap::toggleLocalMapPositioning()
 {
-    mLocalMapLayer->toggleManualGeolocalization();
-    update();
+    LocalMapLayerPtr lml = mLayers.getLayer(LayerLocalMap).staticCast<LocalMapLayer>();
+    lml->toggleManualGeolocalization();
 }
 
 void RoboticsMap::toggleLocalMapVisibility()
 {
-    mLocalMapLayer->setVisible(!mLocalMapLayer->visible());
+    mLayers.toggleVisibility(LayerLocalMap);
 }
 
 void RoboticsMap::onRobotConnectToggle(int robotID)

@@ -61,7 +61,7 @@ namespace MapAbstraction
         QString mName;
         QString mDescription;
         bool mVisible;
-        LocalizationType mLocalizationType;
+        LocalizationType mLocalizationType; //What type of coords the object understands
         LocalizationMode mLocalizationMode;
     };
 }

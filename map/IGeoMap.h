@@ -15,6 +15,7 @@ namespace MapAbstraction
         virtual ~IGeoMap() {}
         virtual GeoLocalMapReceiverPtr localMapReceiver() const = 0;
         virtual GeoMapSenderPtr sender() const = 0;
+        virtual ISensorReadingsPtr sensorReadingsInterface() const = 0;
     };
 }
 

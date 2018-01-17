@@ -42,14 +42,22 @@ QImage MapIconPainter::paintIcon(QImage icon, MapObjectConstPtr object, bool sim
     {   //Draw index on waypoint
         MapWaypointObjectConstPtr waypoint = object.staticCast<const MapWaypointObject>();
         QPainter painter(&icon);
+        QRgb color = icon.pixel(3, icon.height()/2);
+        painter.setPen(color);
+        painter.setBrush(QBrush(color));
+        int radius = icon.width()/2 - 5;
+        QPen oldPen = painter.pen();
+        QPen pen(painter.brush(), 2);
+        painter.setPen(pen);
+        painter.drawLine(QPointF(icon.width()/2, icon.height()/2),
+                         QPointF(icon.width()/2 + radius*cos(waypoint->orientation()),
+                                 icon.height()/2 + radius*sin(waypoint->orientation())));
+        painter.setPen(oldPen);
         QPainterPath path;
-        QRgb color = icon.pixel(3, icon.width()/2);
         QFont f = painter.font();
         f.setPixelSize(16);
         f.setBold(true);
         painter.setFont(f);
-        painter.setPen(color);
-        painter.setBrush(QBrush(color));
         path.addText(icon.rect().bottomLeft(), f, QString::number(waypoint->number()));
         painter.drawPath(path);
         painter.strokePath(path, QPen(Qt::white, 1));

@@ -14,12 +14,12 @@ namespace MapAbstraction
         GeoObjectID addOrGetGeoReference(qint32 key);
         GeoObjectID getGeoReference(qint32 key) const;
 
-        MapRobotObjectPtr getLocalizedObject(const GeoObjectID &id) const;
-        MapRobotObjectPtr addLocalizedObject(const GeoObjectID &id, MapRobotObjectPtr info);
+        MapRobotObjectPtr getLocalizedRobot(const GeoObjectID &id) const;
+        MapObjectPtr addLocalizedObject(const GeoObjectID &id, MapObjectPtr info);
 
     private:
         QMap<qint32, GeoObjectID> mMap;
-        QMap<GeoObjectID, MapRobotObjectPtr> mLocalizedMap;
+        QMap<GeoObjectID, MapObjectPtr> mLocalizedMap;
     };
 }
 

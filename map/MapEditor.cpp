@@ -50,6 +50,16 @@ void MapEditor::finalizeEdit(bool persist)
     emit finalizeMapEdit(persist);
 }
 
+void MapEditor::orderParking()
+{
+    emit commandOrderParking();
+}
+
+void MapEditor::orderPath()
+{
+    emit commandOrderPath();
+}
+
 PlacemarkType MapEditor::pointType() const
 {
     switch (mEditMode)

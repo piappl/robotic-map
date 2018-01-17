@@ -23,23 +23,23 @@ namespace MapAbstraction
         return mMap.value(key);
     }
 
-    MapRobotObjectPtr RobotGeoReferences::getLocalizedObject(const GeoObjectID &id) const
+    MapRobotObjectPtr RobotGeoReferences::getLocalizedRobot(const GeoObjectID &id) const
     {
-        return mLocalizedMap.value(id);
+        Q_ASSERT(mLocalizedMap.value(id) && PlacemarkRobot == mLocalizedMap.value(id)->category());
+        return mLocalizedMap.value(id).staticCast<MapRobotObject>();
     }
 
-    MapRobotObjectPtr RobotGeoReferences::addLocalizedObject(const GeoObjectID &id,
-                                                MapRobotObjectPtr info)
+    MapObjectPtr RobotGeoReferences::addLocalizedObject(const GeoObjectID &id, MapObjectPtr info)
     {
-        MapRobotObjectPtr robot(dynamic_cast<MapRobotObject*>(info->Clone()));
+        MapObjectPtr object(info->Clone());
         if (!mLocalizedMap.contains(id))
         {
-            mLocalizedMap[id] = robot;
+            mLocalizedMap[id] = object;
         }
         else
         {
-            mLocalizedMap.insert(id, robot);
+            mLocalizedMap.insert(id, object);
         }
-        return robot;
+        return object;
     }
 }

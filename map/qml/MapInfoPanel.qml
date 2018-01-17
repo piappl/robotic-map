@@ -231,7 +231,7 @@ PlacemarkListWindow
         target: controller
         onRobotUpdate:
         {
-            console.log("STATE!!: ", aStateString)
+            //console.log("STATE!!: ", aStateString)
             for (var i = 0; i < robotInfoModel.count; i++)
             {   //Find if already on list
                 if(robotInfoModel.get(i).placemarkID === aPlacemarkID)

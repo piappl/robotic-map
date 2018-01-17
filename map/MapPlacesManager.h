@@ -8,7 +8,8 @@
 #include "MapAbstractionFwd.h"
 #include "GeoCoords.h"
 #include "GeoObjectID.h"
-#include "MapLayersFwd.h"
+#include "Orientation.h"
+#include "LocalMapLayer.h"
 
 namespace Marble { class MarbleMap; }
 
@@ -18,6 +19,7 @@ Q_OBJECT
 signals:
     void selectionModeChanged(bool selectionMode);
     void mapPathCreated(int targetRobotID, MapAbstraction::MapPath path);
+    void skillTriggered(int targetRobotID, QString);
 
 public slots:
     void addAtCenter(bool orderBeforeSelected);
@@ -27,10 +29,12 @@ public slots:
     void editModeChanged(PlacemarkType type, bool on);
     void selectPlacemark(int placemarkID);
     void finalizeMapEdit(bool accept);
+    void orderPath();
+    void orderParking();
 
 public:
     MapPlacesManager(PlacemarkLogicPtr logic, MapAbstraction::GeoObjectsManagerPtr geoManager,
-                     Marble::LocalMapLayerPtr localMapLayer, Marble::MarbleMap *map);
+                     MapAbstraction::LocalMapLayerPtr localMapLayer, Marble::MarbleMap *map);
     PlacemarkType currentEditMode() const;
     void selectPlacemarkRequest(int x, int y);
 
@@ -45,10 +49,11 @@ private:
     void selectPlacemark(PlacemarkPtr place);
     QVector<PlacemarkConstPtr> placemarksAtCenter(bool filterByType = true) const;
     QVector<PlacemarkConstPtr> placemarksAtPoint(int x, int y, bool filterByType = true) const;
+    MapAbstraction::Orientation newWaypointDefaultOrientation(MapAbstraction::GeoCoords coords) const;
 
     PlacemarkLogicPtr mPlacemarkLogic;
     MapAbstraction::GeoObjectsManagerPtr mGeoManager;
-    Marble::LocalMapLayerPtr mLocalMapLayer;
+    MapAbstraction::LocalMapLayerPtr mLocalMapLayer;
     Marble::MarbleMap *mMarbleMap;
     PlacemarkType mCurrentEditMode;
 };

@@ -16,9 +16,13 @@ namespace MapAbstraction
         MapWrap(QQuickItem *viewMap, int consoleID);
         GeoMapSenderPtr sender() const;
         GeoLocalMapReceiverPtr localMapReceiver() const;
+        ISensorReadingsPtr sensorReadingsInterface() const;
 
     public slots:
         void updateRobot(MapRobotObjectPtr robotInfo);
+        void updateConsole(MapPlaceObjectPtr consoleInfo);
+        void updateFileGeometry(const QString &sourceFile);
+        void removeGeometry(const QString &key);
         void robotConnected(int robotID, bool connected);
         void robotAvailabilityChanged(int robotId, bool available);
 

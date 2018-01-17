@@ -1,29 +1,24 @@
 #ifndef LASERCLOUDLAYER_H
 #define LASERCLOUDLAYER_H
 
-#include <QImage>
-#include <marble/LayerInterface.h>
-#include "InternalTypesFwd.h"
-#include "MapAbstractionFwd.h"
+#include "MapLayerInterface.h"
 #include "LaserScanPoint.h"
-#include "MapLayersFwd.h"
+#include "LocalMapLayer.h"
 
-class RoboticsMap;
-
-namespace Marble
+namespace MapAbstraction
 {
-    class LaserCloudLayer : public QObject, public LayerInterface
+    class LaserCloudLayer : public MapLayerInterface
     {
     Q_OBJECT
     public:
-        LaserCloudLayer(LocalMapLayerPtr map);
+        LaserCloudLayer(RoboticsMap *rm, LocalMapLayerPtr map);
         void updateContent(MapAbstraction::LaserScanPoints points, MapAbstraction::MapRobotObjectConstPtr robot);
+        LayerType type() const { return LayerLaserCloud; }
 
         QStringList renderPosition() const;
         qreal zValue() const;
-        bool render(GeoPainter *painter, ViewportParams *viewport, const QString &renderPos = "NONE", GeoSceneLayer *layer = 0);
-        void setVisible(bool visible);
-        bool visible() const;
+        bool render(Marble::GeoPainter *painter, Marble::ViewportParams *viewport, const QString &renderPos = "NONE",
+                    Marble::GeoSceneLayer *layer = 0);
         bool hasContent() const;
 
     private:
@@ -31,9 +26,9 @@ namespace Marble
         MapAbstraction::LaserScanPoints mLaserPoints;
         MapAbstraction::MapRobotObjectConstPtr mRobot;
 
-        bool mVisible;
-        bool mHasContent;
+        bool mHasContent = false;
     };
+    typedef QSharedPointer<LaserCloudLayer> LaserCloudLayerPtr;
 }
 
 #endif // LASERCLOUDLAYER_H

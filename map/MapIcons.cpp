@@ -14,13 +14,15 @@ QString MapIcons::iconName(DefaultMapIcon type)
         case ConnectedIcon: return "connected";
         case DisconnectedIcon: return "disconnected";
         case PointIcon: return "point";
+        case SelectedPointIcon: return "star";
         case WaypointIcon: return "waypoint";
         case ReachedWaypointIcon: return "waypointReached";
         case SelectedWaypointIcon: return "waypointSelected";
         case PolygonNodeIcon: return "polygonNode";
         case SelectedPolygonNodeIcon: return "polygonNodeSelected";
         case TriangleIcon: return "triangle";
-        case NoIcon: return "noIcon";
+        case PedestrianIcon: return "pedestrian";
+        case NoIcon: return "noIcon"; 
         default: return "noIcon";
     }
 }

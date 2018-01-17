@@ -1,4 +1,5 @@
 #include <QQuickItem>
+#include <QFileInfo>
 #include <marble/MarbleModel.h>
 #include <marble/GeoDataTreeModel.h>
 #include <marble/GeoDataStyle.h>
@@ -19,11 +20,6 @@ using namespace MapAbstraction;
 
 namespace
 {
-    QString iconPath(PlacemarkPtr placemark)
-    {
-        return placemark->style()->iconStyle().iconPath();
-    }
-
     GeoDataLabelStyle::Alignment getAlignment()
     {
         return GeoDataLabelStyle::Right;
@@ -258,18 +254,33 @@ void PlacemarkLogic::updatePlacemarkIcon(PlacemarkPtr placemark, MapObjectPtr ne
     bool isSelected = mGeoManager->isSelected(placemark);
     QImage newIcon = mIconProvider.getIcon(newInfo, mIconsSimplified, isSelected);
     QString newIconPath = mIconProvider.getIconPath(newInfo, mIconsSimplified, isSelected);
+    if (newInfo->category() == PlacemarkWaypoint)
+    {
+        auto waypoint = dynamic_cast<MapWaypointObject*>(newInfo.data());
+        auto number = QString::number(waypoint->number());
+        auto orientation = QString::number(waypoint->orientation());
+        auto info = "-" + number + "-" + orientation;
+        auto extension = QFileInfo(newIconPath).suffix();
+        if (extension.size() > 0)
+        {
+            auto index = newIconPath.lastIndexOf("." + extension);
+            newIconPath.insert(index, info);
+        }
+        else
+        {
+            newIconPath.append(info);
+        }
+    }
     updatePlacemarkIcon(placemark, newIconPath, newIcon);
 }
 
 void PlacemarkLogic::updatePlacemarkIcon(PlacemarkPtr placemark, QString newIconPath, QImage newIcon)
 {
-    QSharedPointer<GeoDataStyle> style = placemark->style().constCast<GeoDataStyle>();
-    QString oldPath = style->iconStyle().iconPath();
+    QSharedPointer<GeoDataStyle> style(new GeoDataStyle(*placemark->style()));
     style->iconStyle().setIconPath(newIconPath);
     style->iconStyle().setIcon(newIcon);
     style->labelStyle().setAlignment(getAlignment());
-
-    //qDebug("Style path icon: %s", qPrintable(placemark->style()->iconStyle().iconPath()));
+    placemark->setStyle(style);
 }
 
 void PlacemarkLogic::updatePlacemarkPosition(PlacemarkPtr placemark, MapObjectPtr newInfo)
@@ -303,11 +314,8 @@ void PlacemarkLogic::updatePlacemarkName(PlacemarkPtr placemark, MapObjectPtr ne
 }
 
 void PlacemarkLogic::createPlacemarkStyle(PlacemarkPtr placemark)
-{   //initial style settings. In Marble, styles are independent of placemark,
-    //their memory allocation and release is external to placemark class.
+{
     QSharedPointer<GeoDataStyle> style(new GeoDataStyle(*placemark->style()));
-    mStyles.append(style);
-
     QFont font;
     font.setBold(true);
     style->labelStyle().setColor(Qt::red);

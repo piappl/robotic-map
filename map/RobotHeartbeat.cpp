@@ -47,7 +47,7 @@ namespace MapAbstraction
         if (!mRobotHeartState.contains(id))
             return; //We are not observing this robot - it was not set as available
 
-        MapRobotObjectPtr data = mGeoRefs->getLocalizedObject(id);
+        MapRobotObjectPtr data = mGeoRefs->getLocalizedRobot(id);
         RobotHeartStatePtr robotState = mRobotHeartState[id];
         RobotState state = robotState->isAlive() ?
                     (robotState->isCommunicating() ?

@@ -3,7 +3,7 @@
 
 namespace
 {
-    const MapAbstraction::GeoCoords invalidCoords(0, 0, 100);
+    const MapAbstraction::GeoCoords invalidCoords(0, 0, -100000);
 }
 
 namespace MapAbstraction

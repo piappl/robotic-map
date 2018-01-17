@@ -1,24 +1,24 @@
 #ifndef REGIONSLAYER_H
 #define REGIONSLAYER_H
 
-#include <marble/LayerInterface.h>
-#include "InternalTypesFwd.h"
+#include "MapLayerInterface.h"
+#include "GeoObjectsManager.h"
 
-namespace Marble
+namespace MapAbstraction
 {
-    class RegionsLayer : public LayerInterface
+    class RegionsLayer : public MapLayerInterface
     {
     public:
-        RegionsLayer(MapAbstraction::GeoObjectsManagerPtr geoObjectsManager);
+        RegionsLayer(RoboticsMap *rm);
         QStringList renderPosition() const;
-        bool render(GeoPainter *painter, ViewportParams *viewport, const QString &renderPos = "NONE", GeoSceneLayer *layer = 0);
-        void setVisible(bool visible);
-        bool visible() const;
+        LayerType type() const { return LayerRegions; }
+        bool render(Marble::GeoPainter *painter, Marble::ViewportParams *viewport, const QString &renderPos = "NONE",
+                    Marble::GeoSceneLayer *layer = 0);
 
     private:
         MapAbstraction::GeoObjectsManagerPtr mGeoObjectsManager;
-        bool mVisible;
     };
+    typedef QSharedPointer<RegionsLayer> RegionsLayerPtr;
 }
 
 #endif // REGIONSLAYER_H

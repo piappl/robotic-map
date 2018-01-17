@@ -220,17 +220,17 @@ Rectangle
         MapButton
         {
             id: acceptEdits
-            anchors.left: placeAddBefore.right
-            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.top: editActionsRect.bottom
             marginLeft: MapStyle.margins.smallLeftMargin
             icon: "qrc:/mapwidget/icons/accept.png"
             onClicked:
             {
                 finalized = true
                 mapEditWindow.visible = false
+                mapEditor.orderPath();
             }
         }
-
     }
 
     PlacesList

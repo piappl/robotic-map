@@ -1,29 +1,25 @@
 #ifndef PATHSLAYER_H
 #define PATHSLAYER_H
 
-#include <marble/LayerInterface.h>
-#include "InternalTypesFwd.h"
+#include "MapLayerInterface.h"
+#include "MapLogPlacemarkData.h"
+#include "GeoObjectsManager.h"
 
-namespace Marble
+namespace MapAbstraction
 {
-    class PathsLayer : public LayerInterface
+    class PathsLayer : public MapLayerInterface
     {
     public: //LayerInterface
-        PathsLayer(MapAbstraction::MapLogPlacemarkDataPtr mapLogData,
-                         MapAbstraction::GeoObjectsManagerPtr geoObjectsManager);
+        PathsLayer(RoboticsMap *rm);
+        LayerType type() const { return LayerPaths; }
         QStringList renderPosition() const;
-        bool render(GeoPainter *painter, ViewportParams *viewport, const QString &renderPos = "NONE", GeoSceneLayer *layer = 0);
-        void setRobotPathsVisibility(bool visible);
-        bool robotPathsVisible() const;
-        void setWaypointPathsVisibility(bool visible);
-        bool waypointPathsVisible() const;
-
+        bool render(Marble::GeoPainter *painter, Marble::ViewportParams *viewport, const QString &renderPos = "NONE",
+                    Marble::GeoSceneLayer *layer = 0);
     private:
         MapAbstraction::MapLogPlacemarkDataPtr mMapLogData;
         MapAbstraction::GeoObjectsManagerPtr mGeoObjectsManager;
-        bool mRobotPathsVisible;
-        bool mWaypointPathsVisible;
     };
+    typedef QSharedPointer<PathsLayer> PathsLayerPtr;
 }
 
 #endif // PATHSLAYER_H
