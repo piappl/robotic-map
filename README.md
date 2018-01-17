@@ -1,12 +1,11 @@
 # robotic-map
 map - the robotic map interface library
-rosmapinterface - executable that shows the interface and act as a ros node (can be used to communicate with ROS robot) 
 
 <b>Introduction:</b>
 
 Robotic map interface, based on Marble. Author: Adam Dąbrowski, adabrowski@piap.pl. License: LGPLv3
 
-The map project creates the library. You can use it with your application through Qt slots/signals interface. Another option is to build and run rosmapinterface - then the map functions as a ROS node.
+The map project creates the library. You can use it with your application through Qt slots/signals interface. It is supported by the robotic-map-ros-interface project, allowing the map functions as a ROS node.
 
 <b> User Manual </b>
 
@@ -22,7 +21,7 @@ You can find User Manual in the docs directory.
 - Simple QML interface.
 - A framework for storing data, recording paths.
 - Object follow mode.
-- Choice of interface: QT slots & signals or ROS topics.
+- Choice of interface: QT slots & signals or (through robotic-map-ros-interface) ROS topics.
 
 <b>Dependencies:</b>
 
@@ -47,7 +46,6 @@ Your customized content should be placed in /share/maps/ directory:
 - Marble fork (& cooperation).
 - Fix positioning approximation closer to poles.
 - Data persistence.
-- Areas: denied or to explore (add interface).
 - Dynamic local map updates.
 - Rework interface to something more intuitive
 
