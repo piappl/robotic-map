@@ -2,7 +2,7 @@
 set -e
 
 if [ "$#" -ne 1 ]; then
-  echo "Provide Cmake Prefix Path for QT (i.e. ~/Qt/5.7/gcc_64/lib/cmake/)"
+  echo "Provide Cmake Prefix Path for QT (i.e. ~/Qt/5.9.3/gcc_64/lib/cmake/)"
   exit 1
 fi
 
@@ -27,7 +27,7 @@ if [ ! -d "$marbleSource" ]; then
    cd $marbleSource
    echo "****git update and checkout to supported version"
    git remote update
-   git checkout 87c0182d3b0a38c58c11249870d5202f944d9acf
+   git checkout 0bc8ff
    echo "****Applying patch"
    git apply $mapwidgetMarblePatchPath
    git add --all

@@ -1,30 +1,133 @@
+diff --git a/UPDATING.txt b/UPDATING.txt
+new file mode 100644
+index 0000000..535934a
+--- /dev/null
++++ b/UPDATING.txt
+@@ -0,0 +1,13 @@
++Keeping the sources up-to-date with the original Marble project.
++
++We want to keep our custom changes always on top of other commits.
++To do this, each time you update you need to rewrite the history in our
++gerrit repository by pushing with force flag (-f). 
++
++In this case, we get stable version from branch Applications/17.04,
++check the current stable branch.
++
++1) git remote add upstream git://anongit.kde.org/marble
++2) git remote update
++3) git rebase upstream/Applications/17.04
++4) git push -f origin master
 diff --git a/data/maps/earth/openstreetmap/openstreetmap.dgml b/data/maps/earth/openstreetmap/openstreetmap.dgml
-index c3ebe94..2fb6d0e 100644
+index 6345918..7121c51 100644
 --- a/data/maps/earth/openstreetmap/openstreetmap.dgml
 +++ b/data/maps/earth/openstreetmap/openstreetmap.dgml
-@@ -17,7 +17,7 @@
+@@ -17,8 +17,8 @@
        <visible>true</visible>
        <description><![CDATA[<p>A <i>global roadmap</i> created by the OpenStreetMap (OSM) project.</p><p>OSM is an open community which creates free editable maps. The OSM data was rendered using Mapnik.</p>]]></description>
        <zoom>
 -        <minimum>   900  </minimum>
-+        <minimum>  1400  </minimum>
-         <maximum>  3500  </maximum>
+-        <maximum>  3500  </maximum>
++        <minimum>  900  </minimum>
++        <maximum>  3900  </maximum>
          <discrete> true </discrete>
        </zoom>
+     </head>
 @@ -31,7 +31,7 @@
          <texture name="mapnik_data" expire="604800">
            <sourcedir format="PNG"> earth/openstreetmap </sourcedir>
            <tileSize width="256" height="256"/>
 -          <storageLayout levelZeroColumns="1" levelZeroRows="1" maximumTileLevel="19" mode="OpenStreetMap"/>
-+          <storageLayout levelZeroColumns="1" levelZeroRows="1" maximumTileLevel="20" mode="OpenStreetMap"/>
++          <storageLayout levelZeroColumns="1" levelZeroRows="1" maximumTileLevel="21" mode="OpenStreetMap"/>
            <projection name="Mercator"/>
            <downloadUrl protocol="https" host="a.tile.openstreetmap.org" path="/"/>
            <downloadUrl protocol="https" host="b.tile.openstreetmap.org" path="/"/>
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index af0a716..b3f0585 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -1,4 +1,11 @@
+ # before add_subdirectory() !
++
++set(MARBLE_LIB_VERSION_MAJOR "0")
++set(MARBLE_LIB_VERSION_MINOR "26")
++set(MARBLE_LIB_VERSION_PATCH "20")
++set(MARBLE_LIB_VERSION "${MARBLE_LIB_VERSION_MAJOR}.${MARBLE_LIB_VERSION_MINOR}.${MARBLE_LIB_VERSION_PATCH}")
++set(MARBLE_ABI_VERSION "27")
++
+ if(MSVC)
+   add_definitions(-D_USE_MATH_DEFINES=1)
+ endif(MSVC)
+@@ -67,11 +74,6 @@ endif()
+ 
+ add_subdirectory( bindings )
+ 
+-configure_file(
+-  ${CMAKE_CURRENT_SOURCE_DIR}/config-marble.h.cmake
+-  ${CMAKE_CURRENT_BINARY_DIR}/config-marble.h
+-)
+-
+ if(APPLE)
+   add_subdirectory( mac )
+ endif(APPLE)
+@@ -79,3 +81,40 @@ endif(APPLE)
+ add_subdirectory( plasma )
+ add_subdirectory( plasmarunner )
+ add_subdirectory( thumbnailer )
++
++########### CMake Config files ###############
++
++include(CMakePackageConfigHelpers)
++
++set(MARBLE_CMAKECONFIGNAME Marble)
++set(MARBLE_INSTALL_CMAKECONFIGDIR ${CMAKE_INSTALL_LIBDIR}/cmake/${MARBLE_CMAKECONFIGNAME})
++set(FINAL_INCLUDE_INSTALL_DIRECTORY ${INCLUDE_INSTALL_DIR}/marble)
++
++configure_package_config_file(lib/marble/MarbleConfig.cmake.in
++    ${CMAKE_CURRENT_BINARY_DIR}/${MARBLE_CMAKECONFIGNAME}Config.cmake
++    INSTALL_DESTINATION ${MARBLE_INSTALL_CMAKECONFIGDIR}
++    PATH_VARS FINAL_INCLUDE_INSTALL_DIRECTORY
++)
++
++write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/${MARBLE_CMAKECONFIGNAME}ConfigVersion.cmake
++    VERSION ${MARBLE_LIB_VERSION}
++    COMPATIBILITY SameMajorVersion
++)
++
++install(FILES
++    ${CMAKE_CURRENT_BINARY_DIR}/${MARBLE_CMAKECONFIGNAME}Config.cmake
++    ${CMAKE_CURRENT_BINARY_DIR}/${MARBLE_CMAKECONFIGNAME}ConfigVersion.cmake
++    DESTINATION ${MARBLE_INSTALL_CMAKECONFIGDIR}
++)
++
++install(
++    EXPORT MarbleTargets
++    FILE ${MARBLE_CMAKECONFIGNAME}Targets.cmake
++    DESTINATION ${MARBLE_INSTALL_CMAKECONFIGDIR}
++)
++
++configure_file(
++  ${CMAKE_CURRENT_SOURCE_DIR}/config-marble.h.cmake
++  ${CMAKE_CURRENT_BINARY_DIR}/config-marble.h
++)
++
 diff --git a/src/lib/marble/CMakeLists.txt b/src/lib/marble/CMakeLists.txt
-index a47b568..5c862f0 100644
+index 9b43820..0da7d4e 100644
 --- a/src/lib/marble/CMakeLists.txt
 +++ b/src/lib/marble/CMakeLists.txt
-@@ -378,6 +378,7 @@ target_link_libraries(marblewidget
+@@ -39,12 +39,6 @@ INCLUDE(graphicsview/CMakeLists.txt)
+ INCLUDE(layers/CMakeLists.txt)
+ INCLUDE(osm/CMakeLists.txt)
+ 
+-set(MARBLE_LIB_VERSION_MAJOR "0")
+-set(MARBLE_LIB_VERSION_MINOR "26")
+-set(MARBLE_LIB_VERSION_PATCH "20")
+-set(MARBLE_LIB_VERSION "${MARBLE_LIB_VERSION_MAJOR}.${MARBLE_LIB_VERSION_MINOR}.${MARBLE_LIB_VERSION_PATCH}")
+-set(MARBLE_ABI_VERSION "27")
+-
+ ########### next target ###############
+ 
+ if(MARBLE_NO_WEBKITWIDGETS)
+@@ -384,6 +378,7 @@ target_link_libraries(marblewidget
      LINK_PUBLIC
          Qt5::Xml
          Qt5::Gui
@@ -32,7 +135,12 @@ index a47b568..5c862f0 100644
          Qt5::Widgets
          Qt5::Network
      LINK_PRIVATE
-@@ -562,8 +563,33 @@ install( FILES
+@@ -565,12 +560,39 @@ install( FILES
+     geodata/data/GeoDataTimeStamp.h
+     geodata/data/GeoDataTimePrimitive.h
+     geodata/data/Serializable.h
++    geodata/data/GeoDataRelation.h
+     geodata/geodata_export.h
      geodata/parser/GeoDocument.h
      geodata/parser/GeoDataTypes.h
      geodata/writer/GeoWriter.h
@@ -63,23 +171,100 @@ index a47b568..5c862f0 100644
 +    declarative/MarbleQuickItem.h
 +    declarative/Placemark.h
 +    declarative/Coordinate.h
++    declarative/RouteRelationModel.h
      TileCreator.h
      PluginManager.h
      PluginInterface.h
+@@ -626,37 +648,6 @@ install( FILES
+ )
+ 
+ 
+-########### CMake Config files ###############
+-
+-include(CMakePackageConfigHelpers)
+-
+-set(MARBLE_CMAKECONFIGNAME Marble)
+-set(MARBLE_INSTALL_CMAKECONFIGDIR ${CMAKE_INSTALL_LIBDIR}/cmake/${MARBLE_CMAKECONFIGNAME})
+-
+-configure_package_config_file(MarbleConfig.cmake.in
+-    ${CMAKE_CURRENT_BINARY_DIR}/${MARBLE_CMAKECONFIGNAME}Config.cmake
+-    INSTALL_DESTINATION ${MARBLE_INSTALL_CMAKECONFIGDIR}
+-)
+-
+-write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/${MARBLE_CMAKECONFIGNAME}ConfigVersion.cmake
+-    VERSION ${MARBLE_LIB_VERSION}
+-    COMPATIBILITY SameMajorVersion
+-)
+-
+-install(FILES
+-    ${CMAKE_CURRENT_BINARY_DIR}/${MARBLE_CMAKECONFIGNAME}Config.cmake
+-    ${CMAKE_CURRENT_BINARY_DIR}/${MARBLE_CMAKECONFIGNAME}ConfigVersion.cmake
+-
+-    DESTINATION ${MARBLE_INSTALL_CMAKECONFIGDIR}
+-)
+-
+-install(
+-    EXPORT MarbleTargets
+-    FILE ${MARBLE_CMAKECONFIGNAME}Targets.cmake
+-    DESTINATION ${MARBLE_INSTALL_CMAKECONFIGDIR}
+-)
+-
+-
+ ########### Qt Pri file ###############
+ 
+ # Where the pri file is installed is defined by the following rules, with decreasing priority:
+diff --git a/src/lib/marble/MarbleConfig.cmake.in b/src/lib/marble/MarbleConfig.cmake.in
+index 0f562d1..d3ac47c 100644
+--- a/src/lib/marble/MarbleConfig.cmake.in
++++ b/src/lib/marble/MarbleConfig.cmake.in
+@@ -17,3 +17,4 @@ else()
+ endif()
+ 
+ include("${CMAKE_CURRENT_LIST_DIR}/@MARBLE_CMAKECONFIGNAME@Targets.cmake")
++set_and_check(MARBLE_INCLUDE_DIR "@PACKAGE_FINAL_INCLUDE_INSTALL_DIRECTORY@")
+diff --git a/src/lib/marble/MarbleMap.cpp b/src/lib/marble/MarbleMap.cpp
+index d3b6333..f16ea44 100644
+--- a/src/lib/marble/MarbleMap.cpp
++++ b/src/lib/marble/MarbleMap.cpp
+@@ -211,6 +211,7 @@ MarbleMapPrivate::MarbleMapPrivate( MarbleMap *parent, MarbleModel *model ) :
+                       parent, SIGNAL(repaintNeeded()));
+     QObject::connect(&m_vectorTileLayer, SIGNAL(tileLevelChanged(int)), &m_geometryLayer, SLOT(setTileLevel(int)));
+     QObject::connect(&m_vectorTileLayer, SIGNAL(tileLevelChanged(int)), &m_placemarkLayer, SLOT(setTileLevel(int)));
++    QObject::connect(&m_textureLayer, SIGNAL(tileLevelChanged(int)), &m_geometryLayer, SLOT(setTileLevel(int)));
+     QObject::connect(&m_textureLayer, SIGNAL(tileLevelChanged(int)), &m_placemarkLayer, SLOT(setTileLevel(int)));
+ 
+     /*
 diff --git a/src/lib/marble/PlacemarkLayout.cpp b/src/lib/marble/PlacemarkLayout.cpp
-index 0677983..671587d 100644
+index ed2ef3d..b325f45 100644
 --- a/src/lib/marble/PlacemarkLayout.cpp
 +++ b/src/lib/marble/PlacemarkLayout.cpp
-@@ -305,6 +305,7 @@ void PlacemarkLayout::addPlacemarks( const QModelIndex& parent, int first, int l
-         TileId key = TileId::fromCoordinates( coordinates, zoomLevel );
-         m_placemarkCache[key].append( placemark );
+@@ -256,6 +256,7 @@ void PlacemarkLayout::addPlacemarks( const QModelIndex& parent, int first, int l
+             m_placemarkCache[key].append( placemark );
+         }
      }
 +    requestStyleReset();
      emit repaintNeeded();
  }
  
+diff --git a/src/lib/marble/declarative/CMakeLists.txt b/src/lib/marble/declarative/CMakeLists.txt
+index 4fa8f1b..e4d3931 100644
+--- a/src/lib/marble/declarative/CMakeLists.txt
++++ b/src/lib/marble/declarative/CMakeLists.txt
+@@ -50,8 +50,11 @@ if(Qt5Positioning_FOUND)
+     )
+ endif()
+ 
++set_target_properties(marbledeclarative PROPERTIES EXPORT_NAME "MarbleDeclarative")
++
+ if(WIN32)
+   install(TARGETS marbledeclarative RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX} ARCHIVE DESTINATION lib)
+ else()
+-  install(TARGETS marbledeclarative LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
++  install(TARGETS marbledeclarative EXPORT MarbleTargets LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+ endif()
++
 diff --git a/src/lib/marble/declarative/MarbleQuickItem.h b/src/lib/marble/declarative/MarbleQuickItem.h
-index 151bc39..c528030 100644
+index 0074f5b..63ff4fa 100644
 --- a/src/lib/marble/declarative/MarbleQuickItem.h
 +++ b/src/lib/marble/declarative/MarbleQuickItem.h
 @@ -11,7 +11,6 @@
@@ -99,8 +284,21 @@ index 151bc39..c528030 100644
      {
      Q_OBJECT
  
+diff --git a/src/lib/marble/geodata/scene/GeoSceneAbstractDataset.h b/src/lib/marble/geodata/scene/GeoSceneAbstractDataset.h
+index fb8ee41..f09d443 100644
+--- a/src/lib/marble/geodata/scene/GeoSceneAbstractDataset.h
++++ b/src/lib/marble/geodata/scene/GeoSceneAbstractDataset.h
+@@ -24,7 +24,7 @@
+ 
+ #include <QString>
+ 
+-#include <geodata_export.h>
++#include "geodata_export.h"
+ 
+ #include "GeoDocument.h"
+ 
 diff --git a/src/lib/marble/geodata/scene/GeoSceneTextureTileDataset.h b/src/lib/marble/geodata/scene/GeoSceneTextureTileDataset.h
-index 8bd9437..835b91e 100644
+index 0be9d92..2314c58 100644
 --- a/src/lib/marble/geodata/scene/GeoSceneTextureTileDataset.h
 +++ b/src/lib/marble/geodata/scene/GeoSceneTextureTileDataset.h
 @@ -21,7 +21,7 @@
@@ -112,8 +310,30 @@ index 8bd9437..835b91e 100644
  {
   public:
  
+diff --git a/src/lib/marble/layers/GeometryLayer.cpp b/src/lib/marble/layers/GeometryLayer.cpp
+index c6fb027..f3f38b9 100644
+--- a/src/lib/marble/layers/GeometryLayer.cpp
++++ b/src/lib/marble/layers/GeometryLayer.cpp
+@@ -166,7 +166,6 @@ bool GeometryLayer::render(GeoPainter *painter, ViewportParams *viewport,
+ {
+     Q_UNUSED(renderPos)
+     Q_UNUSED(layer)
+-
+     painter->save();
+ 
+     auto const & box = viewport->viewLatLonAltBox();
+@@ -252,7 +251,8 @@ bool GeometryLayer::render(GeoPainter *painter, ViewportParams *viewport,
+     }
+ 
+     for (const auto & item: d->m_cachedDefaultLayer) {
+-        item.second->paint(painter, viewport, item.first, d->m_tileLevel);
++        if (item.second->feature()->isVisible())
++            item.second->paint(painter, viewport, item.first, d->m_tileLevel);
+     }
+ 
+     for (ScreenOverlayGraphicsItem* item: d->m_screenOverlays) {
 diff --git a/src/plugins/CMakeLists.txt b/src/plugins/CMakeLists.txt
-index cb5915f..e4ad30b 100644
+index cb5915f..5a47298 100644
 --- a/src/plugins/CMakeLists.txt
 +++ b/src/plugins/CMakeLists.txt
 @@ -3,6 +3,6 @@ if(NOT CMAKE_SYSTEM_NAME STREQUAL Android)
@@ -122,7 +342,36 @@ index cb5915f..e4ad30b 100644
  
 -add_subdirectory( render )
 -add_subdirectory( positionprovider )
--add_subdirectory( runner )
 +#add_subdirectory( render )
 +#add_subdirectory( positionprovider )
-+#add_subdirectory( runner )
+ add_subdirectory( runner )
+diff --git a/src/plugins/runner/CMakeLists.txt b/src/plugins/runner/CMakeLists.txt
+index 2ba7519..546ec01 100644
+--- a/src/plugins/runner/CMakeLists.txt
++++ b/src/plugins/runner/CMakeLists.txt
+@@ -1,25 +1,3 @@
+-# Search and/or reverse geocoding
+-add_subdirectory( hostip )
+-add_subdirectory( geouri )
+-add_subdirectory( latlon )
+-add_subdirectory( local-osm-search )
+-add_subdirectory( localdatabase )
+-add_subdirectory( openlocation-code-search )
+-add_subdirectory( nominatim-search )
+-add_subdirectory( nominatim-reversegeocoding )
+-add_subdirectory( gosmore-reversegeocoding )
+-
+-# Routing
+-add_subdirectory( gosmore-routing )
+-add_subdirectory( mapquest )
+-add_subdirectory( monav )
+-add_subdirectory( openrouteservice )
+-add_subdirectory( open-source-routing-machine )
+-add_subdirectory( routino )
+-add_subdirectory( yours )
+-add_subdirectory( cyclestreets )
+-# traveling-salesman works, but it is quite slow (tested version 1.0.3-RC1)
+-#add_subdirectory( traveling-salesman )
+ 
+ #Parsing
+ add_subdirectory( cache )
