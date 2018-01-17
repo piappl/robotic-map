@@ -71,10 +71,11 @@ void RoboticsMap::configure()
     map()->setVolatileTileCacheLimit(300000); //300Mb memory cache
     model()->setWorkOffline(false); //TODO
 
-    model()->setHome(25.9722672,44.4349764, 2500);
-    goHome();
+    //model()->setHome(25.9722672,44.4349764, 2500);
     model()->setHome(20.91, 52.19, 2800);
+    goHome();
 
+    mPlacemarkLogic->togglePlacemarksVisibility();
     update();
 }
 
