@@ -277,8 +277,11 @@ void PlacemarkLogic::updatePlacemarkIcon(PlacemarkPtr placemark, MapObjectPtr ne
 void PlacemarkLogic::updatePlacemarkIcon(PlacemarkPtr placemark, QString newIconPath, QImage newIcon)
 {
     QSharedPointer<GeoDataStyle> style(new GeoDataStyle(*placemark->style()));
-    style->iconStyle().setIconPath(newIconPath);
     style->iconStyle().setIcon(newIcon);
+    if (newIcon.isNull())
+    {
+        style->iconStyle().setIconPath(newIconPath);
+    }
     style->labelStyle().setAlignment(getAlignment());
     placemark->setStyle(style);
 }
